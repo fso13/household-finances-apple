@@ -25,6 +25,7 @@ final class AppBootstrap: ObservableObject {
                 configurations: configuration
             )
             newContainer.mainContext.autosaveEnabled = true
+            DataUndo.shared.removeAllActions()
             container = newContainer
             error = nil
             AppLog.storage.info("store opened at \(StoreLocation.storeURL.path, privacy: .public)")
