@@ -45,8 +45,8 @@ jobs:
       - name: Create release assets
         run: |
           ditto -c -k --norsrc --noextattr --keepParent \
-            "dist/Финансы.app" "dist/Финансы-${GITHUB_REF_NAME}.zip"
-          shasum -a 256 "dist/Финансы-${GITHUB_REF_NAME}.zip" > "dist/checksums.txt"
+            "dist/Финансы.app" "dist/Finances-${GITHUB_REF_NAME}.zip"
+          shasum -a 256 "dist/Finances-${GITHUB_REF_NAME}.zip" > "dist/checksums.txt"
           cat "dist/checksums.txt"
 
       - name: Publish GitHub release
@@ -55,7 +55,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           gh release create "$TAG" \
-            "dist/Финансы-${TAG}.zip" \
+            "dist/Finances-${TAG}.zip" \
             "dist/checksums.txt" \
             --title "Финансы $TAG" \
             --generate-notes
