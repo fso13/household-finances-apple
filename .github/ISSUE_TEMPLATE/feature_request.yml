@@ -1,0 +1,50 @@
+name: Feature request
+description: Идея или новый сценарий
+title: "feat: "
+labels: ["type:feature", "priority:P2"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Опишите сценарий и пользу, а не только решение. Так проще выбрать приоритет.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую задачу решает
+      placeholder: Сейчас нельзя ...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Предлагаемое решение
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Альтернативы
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Область
+      options:
+        - Доходы
+        - Расходы
+        - Обязательные платежи
+        - Подписки
+        - Аналитика
+        - Данные и импорт
+        - Интерфейс
+        - Другое
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Проверка
+      options:
+        - label: Я проверил, что такой issue ещё нет
+          required: true

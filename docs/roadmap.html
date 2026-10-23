@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roadmap — Финансы для macOS</title>
+  <meta name="description" content="План развития приложения «Финансы»: релизы v1.0.1–v2.0, бэклог фич, технический долг и ближайшие задачи.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("theme");
+        var theme = saved || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+      } catch (error) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">К содержимому</a>
+
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+    </symbol>
+    <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"></path>
+    </symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="index.html" aria-label="Финансы — на главную">
+        <img src="assets/icon.png" alt="" width="34" height="34">
+        <span>Финансы</span>
+      </a>
+      <nav class="site-nav" aria-label="Основная навигация">
+        <a href="index.html#features">Возможности</a>
+        <a href="index.html#screens">Скриншоты</a>
+        <a href="roadmap.html" aria-current="page">Roadmap</a>
+        <a href="index.html#install">Установка</a>
+        <a class="nav-cta" href="https://github.com/fso13/household-finances-apple">GitHub ↗</a>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Переключить тему">
+          <svg class="theme-moon" aria-hidden="true"><use href="#icon-moon"></use></svg>
+          <svg class="theme-sun" aria-hidden="true"><use href="#icon-sun"></use></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="wrap">
+        <p class="eyebrow">Планы · техдолг · релизы</p>
+        <h1>Roadmap</h1>
+        <p>
+          Сначала сохранность данных и тесты, потом новые сценарии. Ниже — семь релизов,
+          реестр технического долга и ближайшие задачи, которые уже заведены в GitHub Issues.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://github.com/fso13/household-finances-apple/issues">Все задачи</a>
+          <a class="btn btn-ghost" href="https://github.com/fso13/household-finances-apple/milestones">Milestones</a>
+          <a class="btn btn-ghost" href="https://github.com/fso13/household-finances-apple/blob/main/ROADMAP.md">Полный ROADMAP.md</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="callout">
+          <span aria-hidden="true">🔒</span>
+          <div>
+            <strong>Два внешних блокера.</strong>
+            У проекта нет Apple Developer ID, поэтому подпись остаётся ad-hoc, а нотаризация отложена
+            (<a href="https://github.com/fso13/household-finances-apple/issues/19">issue #19</a>).
+            iCloud-синхронизация пока не делается по решению владельца
+            (<a href="https://github.com/fso13/household-finances-apple/issues/25">issue #25</a>).
+            Оба пункта помечены как <code>status:blocked-external</code>.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="kicker">Релизы</p>
+          <h2>По порядку, без прыжков</h2>
+          <p>Оценки — для одного разработчика на ~20 часов в неделю. Сроки указаны от старта работ.</p>
+        </div>
+
+        <div class="timeline">
+          <article class="timeline-item">
+            <div class="timeline-meta">
+              <span class="badge badge-now">в работе</span>
+              <span>0–2 недели</span>
+            </div>
+            <h2>v1.0.1 — Надёжность и фундамент</h2>
+            <p>Сделать текущие расчёты проверяемыми, а ошибки — видимыми.</p>
+            <ul class="timeline-list">
+              <li>Разделить проект на FinancesCore / FinancesUI / FinancesApp</li>
+              <li>Тесты округлений, статистики и календаря</li>
+              <li>AppError, OSLog и восстановление store</li>
+              <li>Undo, подтверждение удаления и accessibility</li>
+              <li>CI: сборка, тесты, линт и артефакт .app</li>
+            </ul>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-meta">
+              <span class="badge badge-next">следующий</span>
+              <span>2–6 недель</span>
+            </div>
+            <h2>v1.1 — Данные и доверие</h2>
+            <p>Безопасный перенос, восстановление и машинно-читаемый экспорт.</p>
+            <ul class="timeline-list">
+              <li>JSON-бэкап и восстановление</li>
+              <li>Мастер импорта CSV с маппингом колонок</li>
+              <li>Автобэкапы перед очисткой и миграциями</li>
+              <li>VersionedSchema V1 → V2 и деньги в копейках</li>
+            </ul>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-meta">
+              <span class="badge badge-later">запланировано</span>
+              <span>6–10 недель</span>
+            </div>
+            <h2>v1.2 — Планирование</h2>
+            <p>Ответ на вопрос «сколько можно потратить», а не только «сколько было».</p>
+            <ul class="timeline-list">
+              <li>Бюджеты по категориям и прогресс</li>
+              <li>План/факт и прогноз остатка</li>
+              <li>Цели накоплений и уведомления</li>
+              <li>Пользовательские категории</li>
+            </ul>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-meta">
+              <span class="badge badge-later">запланировано</span>
+              <span>10–15 недель</span>
+            </div>
+            <h2>v1.3 — Движок регулярных платежей</h2>
+            <p>Шаблоны превращаются в управляемое расписание с историей.</p>
+            <ul class="timeline-list">
+              <li>Статусы: запланирован / оплачен / пропущен</li>
+              <li>Пауза, окончание и история сумм</li>
+              <li>Календарь платежей и напоминания</li>
+              <li>Единая модель для платежей и подписок</li>
+            </ul>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-meta">
+              <span class="badge badge-later">запланировано</span>
+              <span>15–18 недель</span>
+            </div>
+            <h2>v1.4 — Аналитика 2.0</h2>
+            <p>Графики становятся инструментом решений.</p>
+            <ul class="timeline-list">
+              <li>Сравнение периодов и год к году</li>
+              <li>Произвольный диапазон дат</li>
+              <li>PDF-отчёт и печать</li>
+              <li>Теги, поиск и настройка дашборда</li>
+            </ul>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-meta">
+              <span class="badge badge-later">запланировано</span>
+              <span>18–22 недели</span>
+            </div>
+            <h2>v1.5 — Автоматизация</h2>
+            <p>Меньше ручного ввода, больше связи с ежедневными инструментами.</p>
+            <ul class="timeline-list">
+              <li>Импорт банковских выписок CSV/OFX</li>
+              <li>Правила автокатегоризации</li>
+              <li>Shortcuts, menu bar и быстрый ввод</li>
+            </ul>
+          </article>
+
+          <article class="timeline-item">
+            <div class="timeline-meta">
+              <span class="badge badge-later">позже</span>
+              <span>22–34 недели</span>
+            </div>
+            <h2>v2.0 — Экосистема</h2>
+            <p>Выход за пределы одного Mac без потери локальности.</p>
+            <ul class="timeline-list">
+              <li>iOS/iPadOS-приложение на общем core</li>
+              <li>Мультивалютность и локализация</li>
+              <li>Счета, переводы и вложения</li>
+              <li>iCloud — отдельный заблокированный трек</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="kicker">Технический долг</p>
+          <h2>Что чиним в первую очередь</h2>
+          <p>Полный реестр — в ROADMAP.md. Здесь восемь пунктов, которые сильнее всего влияют на риск потери данных и скорость разработки.</p>
+        </div>
+
+        <div class="debt-grid">
+          <article class="debt">
+            <div class="debt-head"><h3>Нет автотестов</h3><span class="pill">P0 · M</span></div>
+            <p>Округления, статистика и календарь проверяются вручную. Регрессии ловятся после релиза.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Нет миграций SwiftData</h3><span class="pill">P0 · M</span></div>
+            <p>Любое изменение модели ломает существующий store. Нужны VersionedSchema и план миграций.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Деньги в Double</h3><span class="pill">P0 · M</span></div>
+            <p>Ошибки округления и блокировка мультивалютности. Переходим на целые копейки.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Молчаливые ошибки</h3><span class="pill">P0 · S</span></div>
+            <p><code>try? context.save()</code> скрывает проблемы. Нужны AppError, баннер и OSLog.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Snapshot-код в release</h3><span class="pill">P0 · S</span></div>
+            <p>Служебный раннер и флаги попадают в production. Убираем через debug-only.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Нет CI</h3><span class="pill">P0 · M</span></div>
+            <p>Сборка и тесты не проверяются на pull request. Добавляем GitHub Actions и артефакт.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Accessibility</h3><span class="pill">P0 · M</span></div>
+            <p>Иконки-кнопки без подписей, графики без VoiceOver-описаний. Нужен аудит.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Агрегаты во view-body</h3><span class="pill">P1 · M</span></div>
+            <p>Все записи грузятся в память, фильтры считаются при каждом рендере. Нужны view models и предикаты.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="kicker">Ближайшие задачи</p>
+          <h2>v1.0.1 по шагам</h2>
+          <p>Каждая задача — отдельный issue с критериями готовности. Порядок соответствует зависимостям.</p>
+        </div>
+
+        <div class="table-card">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Задача</th><th>Метка</th><th>Статус</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/1">1</a></td><td>Разделить на FinancesCore / FinancesUI / FinancesApp</td><td>tech-debt · P0</td><td>в работе</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/2">2</a></td><td>Тесты округлений, статистики и календаря</td><td>testing · P0</td><td>в работе</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/3">3</a></td><td>Убрать snapshot-раннер из release</td><td>ci · P0</td><td>запланировано</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/4">4</a></td><td>AppError, пользовательские ошибки и OSLog</td><td>core · P0</td><td>запланировано</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/5">5</a></td><td>Экран восстановления store вместо fatalError</td><td>core · P0</td><td>запланировано</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/6">6</a></td><td>Undo/redo и подтверждение удаления</td><td>feature · P0</td><td>запланировано</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/7">7</a></td><td>Accessibility: кнопки, таблицы, графики</td><td>ui · P0</td><td>запланировано</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/8">8</a></td><td>Линтер, форматтер и мёртвый код</td><td>ci · P1</td><td>запланировано</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/9">9</a></td><td>CI: сборка, тесты и линт</td><td>ci · P0</td><td>в работе</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/10">10</a></td><td>Версия, build-номер и CHANGELOG</td><td>docs · P1</td><td>запланировано</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="muted" style="margin-top:22px">
+          Статусы на странице обновляются вручную; актуальные — в
+          <a href="https://github.com/fso13/household-finances-apple/issues">GitHub Issues</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p style="margin:0">© <span id="year">2026</span> Финансы. Локальный бюджет для macOS.</p>
+      <nav class="footer-links" aria-label="Ссылки в подвале">
+        <a href="index.html">Главная</a>
+        <a href="https://github.com/fso13/household-finances-apple">GitHub</a>
+        <a href="https://github.com/fso13/household-finances-apple/issues">Issues</a>
+        <a href="https://github.com/fso13/household-finances-apple/wiki">Wiki</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

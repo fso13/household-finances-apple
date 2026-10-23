@@ -3,3 +3,14 @@ dist/
 .DS_Store
 *.xcodeproj
 .swiftpm/
+
+# Local tooling and generated screenshots
+.venv/
+Screenshots-*/
+DerivedData/
+*.xcuserstate
+
+# Secrets
+.env
+.env.*
+*.pem

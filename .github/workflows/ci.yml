@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build, test and package
+    runs-on: macos-15
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build (debug)
+        run: swift build
+
+      - name: Test
+        run: |
+          if [ -d Tests ]; then
+            swift test
+          else
+            echo "Tests target is not created yet; skipping."
+          fi
+
+      - name: Format check
+        run: |
+          if [ -f .swift-format ]; then
+            xcrun swift-format lint --strict --recursive Sources Tests
+          else
+            echo "No .swift-format yet; skipping."
+          fi
+
+      - name: Package app (release, ad-hoc)
+        run: ./Scripts/package_app.sh release
+
+      - name: Create zip artifact
+        run: |
+          ditto -c -k --norsrc --noextattr --keepParent \
+            "dist/Финансы.app" "dist/Финансы.zip"
+          shasum -a 256 "dist/Финансы.zip" | tee dist/checksums.txt
+
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Finances-app
+          path: |
+            dist/Финансы.zip
+            dist/checksums.txt
+          if-no-files-found: error
+          retention-days: 14

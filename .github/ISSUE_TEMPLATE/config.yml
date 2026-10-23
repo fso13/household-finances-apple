@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Документация
+    url: https://github.com/fso13/household-finances-apple/wiki
+    about: Установка, архитектура, данные и бэкапы
+  - name: Roadmap
+    url: https://github.com/fso13/household-finances-apple/blob/main/ROADMAP.md
+    about: Планы, бэклог и технический долг

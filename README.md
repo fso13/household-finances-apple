@@ -1,5 +1,9 @@
 # Финансы — личный бюджет для macOS
 
+[![CI](https://github.com/fso13/household-finances-apple/actions/workflows/ci.yml/badge.svg)](https://github.com/fso13/household-finances-apple/actions/workflows/ci.yml)
+
+**Сайт:** [fso13.github.io/household-finances-apple](https://fso13.github.io/household-finances-apple/) · **Wiki:** [документация](https://github.com/fso13/household-finances-apple/wiki) · **Issues:** [задачи](https://github.com/fso13/household-finances-apple/issues) · **Roadmap:** [ROADMAP.md](ROADMAP.md)
+
 Нативное приложение для учёта выплат и регулярных расходов: зарплата, аванс, отпускные и премии; квартира, гараж и коммуналка с правилами округления; подписки на сервисы. Всё сводится в графики, средние значения и итоги по месяцам, кварталам и годам.
 
 Данные хранятся локально на Mac в SwiftData. Сетевых запросов, аккаунтов и телеметрии нет.
@@ -145,6 +149,11 @@ open "dist/Финансы.app" --args --offscreen --snapshot-dir="$PWD/Screensho
 Package.swift
 README.md             описание приложения и сборки
 ROADMAP.md            релизы, бэклог фич и техдолг
+CHANGELOG.md          история версий
+CONTRIBUTING.md       правила участия
+SECURITY.md           политика безопасности
+.github/              Actions, шаблоны issues и PR
+docs/                 статический сайт для GitHub Pages
 Sources/Finances/
   App/                 FinancesApp, RootView, AppState, SnapshotRunner
   Models/              SwiftData-модели и перечисления

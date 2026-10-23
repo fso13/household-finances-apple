@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Финансы — личный бюджет для macOS</title>
+  <meta name="description" content="Нативное macOS-приложение для учёта зарплаты, обязательных платежей с округлением, подписок и аналитики. Локальные данные, SwiftUI, Swift Charts.">
+  <meta name="color-scheme" content="light dark">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Финансы — личный бюджет для macOS">
+  <meta property="og:description" content="Зарплата, квартира, гараж, коммуналка и подписки — в одном нативном приложении. Без аккаунта и облака.">
+  <meta property="og:url" content="https://fso13.github.io/household-finances-apple/">
+  <meta property="og:image" content="https://fso13.github.io/household-finances-apple/assets/dashboard.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("theme");
+        var theme = saved || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+      } catch (error) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">К содержимому</a>
+
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="icon-banknote" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2.5" y="6" width="19" height="12" rx="2.5"></rect>
+      <circle cx="12" cy="12" r="2.6"></circle>
+      <path d="M6 9.5h.01M18 14.5h.01"></path>
+    </symbol>
+    <symbol id="icon-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 21V5.5A2.5 2.5 0 0 1 6.5 3h7A2.5 2.5 0 0 1 16 5.5V21"></path>
+      <path d="M16 9h3a2 2 0 0 1 2 2v10M2 21h20"></path>
+      <path d="M7 7h2M7 11h2M7 15h2M11 7h2M11 11h2M11 15h2"></path>
+    </symbol>
+    <symbol id="icon-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 2.5 20.5 6 17 9.5"></path>
+      <path d="M3.5 11V9.5a3.5 3.5 0 0 1 3.5-3.5h13"></path>
+      <path d="M7 21.5 3.5 18 7 14.5"></path>
+      <path d="M20.5 13v1.5a3.5 3.5 0 0 1-3.5 3.5H4"></path>
+    </symbol>
+    <symbol id="icon-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 20V11M10 20V4M16 20v-6M22 20H2"></path>
+    </symbol>
+    <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2.5 20 6v6c0 5-3.4 8.4-8 9.5C7.4 20.4 4 17 4 12V6l8-3.5Z"></path>
+      <path d="m8.5 12 2.2 2.2 4.8-4.8"></path>
+    </symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v12"></path>
+      <path d="m7.5 10.5 4.5 4.5 4.5-4.5"></path>
+      <path d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17"></path>
+    </symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+    </symbol>
+    <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"></path>
+    </symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#top" aria-label="Финансы — на главную">
+        <img src="assets/icon.png" alt="" width="34" height="34">
+        <span>Финансы</span>
+      </a>
+      <nav class="site-nav" aria-label="Основная навигация">
+        <a href="#features">Возможности</a>
+        <a href="#screens">Скриншоты</a>
+        <a href="roadmap.html">Roadmap</a>
+        <a href="#install">Установка</a>
+        <a class="nav-cta" href="https://github.com/fso13/household-finances-apple">GitHub ↗</a>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Переключить тему">
+          <svg class="theme-moon" aria-hidden="true"><use href="#icon-moon"></use></svg>
+          <svg class="theme-sun" aria-hidden="true"><use href="#icon-sun"></use></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">macOS · SwiftUI · локально</p>
+          <h1><span class="nowrap">Личный бюджет</span><br><span class="gradient">без таблиц и облаков</span></h1>
+          <p class="hero-lead">
+            Зарплата, аванс, отпускные, квартира, гараж, коммуналка и подписки —
+            в одном нативном приложении. С округлениями, средними и графиками,
+            которые считаются сами.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#install">Скачать для macOS</a>
+            <a class="btn btn-ghost" href="https://github.com/fso13/household-finances-apple">Открыть репозиторий</a>
+          </div>
+          <p class="hero-note">macOS 14+ · без аккаунта · данные не покидают Mac</p>
+        </div>
+        <div class="hero-visual">
+          <img src="assets/dashboard.png" alt="Экран «Обзор»: доходы, расходы, остаток и структура расходов за октябрь" width="1340" height="879">
+        </div>
+      </div>
+    </section>
+
+    <div class="stats" aria-label="Ключевые цифры">
+      <div class="wrap stats-grid">
+        <div class="stat"><b>7</b><span>типов выплат</span></div>
+        <div class="stat"><b>4</b><span>правила округления</span></div>
+        <div class="stat"><b>24</b><span>месяца демо-данных</span></div>
+        <div class="stat"><b>0</b><span>сетевых запросов</span></div>
+      </div>
+    </div>
+
+    <section class="section" id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="kicker">Возможности</p>
+          <h2>Всё, что нужно для личного бюджета</h2>
+          <p>Не очередная таблица с формулами, а приложение, которое понимает типы выплат, периодичность и округления.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature" style="--accent: var(--green)">
+            <span class="feature-icon"><svg aria-hidden="true"><use href="#icon-banknote"></use></svg></span>
+            <h3>Выплаты с типами</h3>
+            <p>Зарплата, аванс, отпускные, премия, больничный. Средняя выплата, медиана, средняя зарплата и фильтры по году.</p>
+          </article>
+
+          <article class="feature" style="--accent: var(--blue)">
+            <span class="feature-icon"><svg aria-hidden="true"><use href="#icon-building"></use></svg></span>
+            <h3>Квартира и обязательные</h3>
+            <p>Аренда, гараж, коммуналка и интернет. Базовая сумма, правило округления, надбавка и итог к оплате — в одной карточке.</p>
+          </article>
+
+          <article class="feature" style="--accent: var(--pink)">
+            <span class="feature-icon"><svg aria-hidden="true"><use href="#icon-repeat"></use></svg></span>
+            <h3>Подписки</h3>
+            <p>Месячная и годовая нагрузка, доля в расходах, ближайшие списания и запись оплаты одним нажатием.</p>
+          </article>
+
+          <article class="feature" style="--accent: var(--brand)">
+            <span class="feature-icon"><svg aria-hidden="true"><use href="#icon-chart"></use></svg></span>
+            <h3>Аналитика</h3>
+            <p>Динамика по месяцам, два бублика, средние по типам выплат, итоги по годам и кварталам. Всё с фильтрами.</p>
+          </article>
+
+          <article class="feature" style="--accent: var(--orange)">
+            <span class="feature-icon"><svg aria-hidden="true"><use href="#icon-download"></use></svg></span>
+            <h3>Экспорт и демо</h3>
+            <p>CSV для Excel и Numbers, демо-набор за 24 месяца, экспорт без облака. Импорт и бэкапы — в следующем релизе.</p>
+          </article>
+
+          <article class="feature" style="--accent: var(--blue)">
+            <span class="feature-icon"><svg aria-hidden="true"><use href="#icon-shield"></use></svg></span>
+            <h3>Приватность</h3>
+            <p>SwiftData на вашем Mac, без аккаунтов и телеметрии. Данные не уходят даже на проверку обновлений.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="screens">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="kicker">Скриншоты</p>
+          <h2>Посмотрите, как это выглядит</h2>
+          <p>Светлая и тёмная темы, нативные контролы macOS и графики Swift Charts. Нажмите на скриншот, чтобы открыть его целиком.</p>
+        </div>
+
+        <div class="shots">
+          <figure class="shot shot-wide">
+            <a href="assets/dashboard.png" target="_blank" rel="noopener">
+              <img src="assets/dashboard.png" alt="Обзор месяца: KPI, график доходов и расходов, структура расходов, обязательные платежи и подписки" loading="lazy">
+            </a>
+            <figcaption><strong>Обзор</strong><span>доходы, расходы, остаток и обязательства месяца</span></figcaption>
+          </figure>
+
+          <figure class="shot">
+            <a href="assets/analytics-full.png" target="_blank" rel="noopener">
+              <img src="assets/analytics.png" alt="Аналитика: фильтры, динамика доходов и расходов, бублики" loading="lazy">
+            </a>
+            <figcaption><strong>Аналитика</strong><span>фильтры, динамика и структура</span></figcaption>
+          </figure>
+
+          <figure class="shot">
+            <a href="assets/recurring.png" target="_blank" rel="noopener">
+              <img src="assets/recurring.png" alt="Обязательные платежи: аренда, коммуналка, интернет и гараж с округлением" loading="lazy">
+            </a>
+            <figcaption><strong>Обязательные платежи</strong><span>база, округление и итог</span></figcaption>
+          </figure>
+
+          <figure class="shot">
+            <a href="assets/subscriptions.png" target="_blank" rel="noopener">
+              <img src="assets/subscriptions.png" alt="Подписки: месячная и годовая нагрузка, структура и ближайшие списания" loading="lazy">
+            </a>
+            <figcaption><strong>Подписки</strong><span>сколько сервисы съедают в год</span></figcaption>
+          </figure>
+
+          <figure class="shot">
+            <a href="assets/analytics-dark.png" target="_blank" rel="noopener">
+              <img src="assets/analytics-dark.png" alt="Тёмная тема аналитики с графиками и таблицами" loading="lazy" style="object-position: top center">
+            </a>
+            <figcaption><strong>Тёмная тема</strong><span>аналитика целиком</span></figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap split">
+        <div>
+          <p class="kicker">Округления</p>
+          <h2>Не «примерно 47 тысяч», а точная сумма к оплате</h2>
+          <p>
+            Для каждого регулярного платежа задаётся базовая сумма и правило округления.
+            Приложение показывает не только итог, но и откуда он взялся.
+          </p>
+          <ul class="checklist">
+            <li>Вверх, вниз, до ближайшего или без округления</li>
+            <li>Шаг: 1, 5, 10, 50, 100, 500 или 1 000 ₽</li>
+            <li>История фактических оплат и защита от дублей</li>
+            <li>Годовая нагрузка с учётом периодичности</li>
+          </ul>
+        </div>
+
+        <div class="example-card" aria-label="Пример расчёта аренды с округлением">
+          <h3>Аренда квартиры</h3>
+          <p class="hint">округление вверх до 100 ₽</p>
+          <div class="formula">
+            <span class="chip">47 250 ₽</span>
+            <span class="arrow" aria-hidden="true">→</span>
+            <span class="chip chip-plus">+50 ₽</span>
+            <span class="arrow" aria-hidden="true">→</span>
+            <span class="chip chip-result">47 300 ₽</span>
+          </div>
+          <div class="example-total">
+            <span>Итого к оплате в месяц</span>
+            <strong>47 300 ₽</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="roadmap">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="kicker">Roadmap</p>
+          <h2>Что дальше</h2>
+          <p>Сначала надёжность и сохранность данных, потом новые сценарии. Полный план — с бэклогом фич и реестром техдолга.</p>
+        </div>
+
+        <div class="releases">
+          <article class="release">
+            <div class="release-top">
+              <span class="release-version">v1.0.1</span>
+              <span class="badge badge-now">в работе</span>
+            </div>
+            <h3>Надёжность и фундамент</h3>
+            <p>Тесты, обработка ошибок, восстановление store, доступность и CI.</p>
+            <ul>
+              <li>FinancesCore + unit-тесты</li>
+              <li>AppError и OSLog</li>
+              <li>Сборка и линт в GitHub Actions</li>
+            </ul>
+          </article>
+
+          <article class="release">
+            <div class="release-top">
+              <span class="release-version">v1.1</span>
+              <span class="badge badge-next">следующий</span>
+            </div>
+            <h3>Данные и доверие</h3>
+            <p>JSON-бэкапы, импорт CSV, миграции SwiftData и деньги в копейках.</p>
+            <ul>
+              <li>Восстановление и автобэкапы</li>
+              <li>Мастер импорта CSV</li>
+              <li>VersionedSchema V1 → V2</li>
+            </ul>
+          </article>
+
+          <article class="release">
+            <div class="release-top">
+              <span class="release-version">v1.2</span>
+              <span class="badge badge-later">позже</span>
+            </div>
+            <h3>Планирование</h3>
+            <p>Бюджеты по категориям, прогноз остатка, цели накоплений и уведомления.</p>
+            <ul>
+              <li>Лимиты и прогресс</li>
+              <li>План/факт и прогноз</li>
+              <li>Пользовательские категории</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="callout" style="margin-top:18px">
+          <span aria-hidden="true">⏳</span>
+          <div><strong>Developer ID и iCloud пока недоступны.</strong> Подпись остаётся ad-hoc, синхронизация отложена. Это отмечено в roadmap как внешние блокеры, а не забытые задачи.</div>
+        </div>
+
+        <a class="more-link" href="roadmap.html">Смотреть полный roadmap <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+
+    <section class="section" id="install">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="kicker">Установка</p>
+          <h2>Соберите за одну минуту</h2>
+          <p>Нужны macOS 14+, Xcode 16+ и Swift 6. Внешних зависимостей нет.</p>
+        </div>
+
+        <div class="install-grid">
+          <div class="code-card" aria-label="Команды сборки">
+            <div class="code-head" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre><code><span class="comment"># клонировать репозиторий</span>
+git clone https://github.com/fso13/household-finances-apple.git
+cd household-finances-apple
+
+<span class="comment"># собрать .app и запустить</span>
+./Scripts/package_app.sh
+open "dist/Финансы.app"</code></pre>
+          </div>
+
+          <div class="install-notes">
+            <div class="note-card">
+              <strong>Первый запуск</strong>
+              <p>Выберите демо-данные за 24 месяца или начните с пустой базы. Демо можно удалить в настройках.</p>
+            </div>
+            <div class="note-card">
+              <strong>Где данные</strong>
+              <p><code>~/Library/Application Support/Finances/Finances.store</code>. Без облака и аккаунта.</p>
+            </div>
+            <div class="note-card">
+              <strong>Про подпись</strong>
+              <p>Developer ID нет, поэтому подпись ad-hoc. Если macOS просит подтверждение — откройте приложение через правый клик. <a href="https://github.com/fso13/household-finances-apple/issues/19">Следить за задачей</a>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p style="margin:0">© <span id="year">2026</span> Финансы. Локальный бюджет для macOS.</p>
+      <nav class="footer-links" aria-label="Ссылки в подвале">
+        <a href="https://github.com/fso13/household-finances-apple">GitHub</a>
+        <a href="https://github.com/fso13/household-finances-apple/issues">Issues</a>
+        <a href="https://github.com/fso13/household-finances-apple/wiki">Wiki</a>
+        <a href="https://github.com/fso13/household-finances-apple/blob/main/ROADMAP.md">Roadmap</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
