@@ -23,6 +23,8 @@ struct SettingsView: View {
     @State private var resultMessage: String?
     @State private var showCategories = false
     @State private var customCategoryCount = CustomCategoryCatalog.shared.categories.count
+    @State private var showCategoryRules = false
+    @State private var categoryRuleCount = CategoryRuleCatalog.shared.rules.count
 
     private enum SettingsSheet: Identifiable {
         case backup(BackupEnvelope)
@@ -50,6 +52,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 dataCard
                 categoriesCard
+                categoryRulesCard
                 dashboardCard
                 notificationsCard
                 backupCard
@@ -173,6 +176,33 @@ struct SettingsView: View {
             }
         ) {
             CategoriesSettingsView()
+        }
+    }
+
+    private var categoryRulesCard: some View {
+        CardView {
+            HStack(spacing: 12) {
+                IconTile(symbol: "wand.and.stars", tint: .purple, size: 34)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Правила категоризации")
+                        .font(.callout.weight(.medium))
+                    Text("\(categoryRuleCount) правил · ключевые слова в заметках")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Управлять") { showCategoryRules = true }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+            }
+        }
+        .sheet(
+            isPresented: $showCategoryRules,
+            onDismiss: {
+                categoryRuleCount = CategoryRuleCatalog.shared.rules.count
+            }
+        ) {
+            CategoryRulesSettingsView()
         }
     }
 

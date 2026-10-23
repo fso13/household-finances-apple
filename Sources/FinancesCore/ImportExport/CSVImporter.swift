@@ -121,7 +121,11 @@ package enum CSVImporter {
                 )
                 kindTitle = "Доход · \(type.title)"
             } else {
-                let category = ExpenseCategory(title: categoryValue ?? "") ?? .other
+                let parsed = ExpenseCategory(title: categoryValue ?? "")
+                let category =
+                    (parsed == nil || parsed == .other)
+                    ? (CategoryRuleEngine.category(for: note) ?? parsed ?? .other)
+                    : (parsed ?? .other)
                 expenses.append(
                     ExpenseBackup(
                         amount: amount,

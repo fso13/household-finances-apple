@@ -52,11 +52,23 @@ struct ExpenseEditorSheet: View {
                         }
                     }
 
+                    if let suggested = CategoryRuleEngine.category(for: draft.note),
+                        suggested != draft.category
+                    {
+                        Button {
+                            draft.category = suggested
+                        } label: {
+                            Label("По правилу: \(suggested.title)", systemImage: "wand.and.stars")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.borderless)
+                    }
+
                     DatePicker("Дата", selection: $draft.date, in: ...Date(), displayedComponents: .date)
                 }
 
                 Section("Детали") {
-                    TextField("Комментарий", text: $draft.note, axis: .vertical)
+                    TextField("Комментарий (#тег, ключевые слова)", text: $draft.note, axis: .vertical)
                         .lineLimit(2...4)
                 }
             }

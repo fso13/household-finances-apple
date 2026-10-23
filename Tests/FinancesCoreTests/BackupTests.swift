@@ -85,6 +85,9 @@ final class BackupTests: XCTestCase {
                         amount: 50_000,
                         note: ""
                     )
+                ],
+                categoryRules: [
+                    CategoryRule(keyword: "пятёрочка", category: .food)
                 ]
             )
         )
@@ -107,6 +110,7 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(decoded.data.periods?.first?.status, "paid")
         XCTAssertEqual(decoded.data.recurringDetails?.first?.recurringKey, "test")
         XCTAssertEqual(decoded.data.priceChanges?.first?.amount, 50_000)
+        XCTAssertEqual(decoded.data.categoryRules?.first?.keyword, "пятёрочка")
     }
 
     func testDecodeRejectsUnknownFormat() throws {
@@ -139,6 +143,7 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<PaymentPeriod>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<RecurringDetail>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<RecurringPriceChange>()), 1)
+        XCTAssertEqual(CategoryRuleCatalog.shared.rules.count, 1)
         XCTAssertEqual(CustomCategoryCatalog.shared.categories.count, 1)
     }
 

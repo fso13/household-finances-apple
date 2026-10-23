@@ -60,6 +60,7 @@ package enum BackupCodec {
             let priceChanges = try context.fetch(
                 FetchDescriptor<RecurringPriceChange>(sortBy: [SortDescriptor(\.effectiveDate)])
             )
+            let categoryRules = CategoryRuleCatalog.shared.rules
 
             return BackupEnvelope(
                 appVersion: appVersion,
@@ -74,7 +75,8 @@ package enum BackupCodec {
                     customCategories: customCategories,
                     periods: periods.map(PaymentPeriodBackup.init),
                     recurringDetails: details.map(RecurringDetailBackup.init),
-                    priceChanges: priceChanges.map(RecurringPriceChangeBackup.init)
+                    priceChanges: priceChanges.map(RecurringPriceChangeBackup.init),
+                    categoryRules: categoryRules
                 )
             )
         } catch {
@@ -110,6 +112,14 @@ package enum BackupCodec {
                 CustomCategoryCatalog.shared.replaceAll(customCategories)
             } else {
                 CustomCategoryCatalog.shared.merge(customCategories)
+            }
+        }
+
+        if let categoryRules = envelope.data.categoryRules {
+            if mode == .replace {
+                CategoryRuleCatalog.shared.replaceAll(categoryRules)
+            } else {
+                CategoryRuleCatalog.shared.merge(categoryRules)
             }
         }
 
