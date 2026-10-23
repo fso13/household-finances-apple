@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/fso13/household-finances-apple/actions/workflows/ci.yml/badge.svg)](https://github.com/fso13/household-finances-apple/actions/workflows/ci.yml)
 
-**Сайт:** [fso13.github.io/household-finances-apple](https://fso13.github.io/household-finances-apple/) · **Wiki:** [документация](https://github.com/fso13/household-finances-apple/wiki) · **Issues:** [задачи](https://github.com/fso13/household-finances-apple/issues) · **Roadmap:** [ROADMAP.md](ROADMAP.md)
+**Скачать:** [GitHub Releases](https://github.com/fso13/household-finances-apple/releases) · **Сайт:** [fso13.github.io/household-finances-apple](https://fso13.github.io/household-finances-apple/) · **Wiki:** [документация](https://github.com/fso13/household-finances-apple/wiki) · **Issues:** [задачи](https://github.com/fso13/household-finances-apple/issues) · **Roadmap:** [ROADMAP.md](ROADMAP.md)
 
 Нативное приложение для учёта выплат и регулярных расходов: зарплата, аванс, отпускные и премии; квартира, гараж и коммуналка с правилами округления; подписки на сервисы. Всё сводится в графики, средние значения и итоги по месяцам, кварталам и годам.
 
@@ -84,7 +84,9 @@
 - macOS 14 или новее;
 - Xcode 16+ / Swift 6 (проверено на macOS 27, Xcode 27, Swift 6.4).
 
-Собрать `.app` и запустить:
+Скачать готовый `.app`: [GitHub Releases](https://github.com/fso13/household-finances-apple/releases).
+
+Или собрать локально:
 
 ```bash
 ./Scripts/package_app.sh
