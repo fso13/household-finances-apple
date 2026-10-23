@@ -157,6 +157,7 @@ struct DashboardView: View {
         .navigationTitle("Обзор")
         .onAppear {
             BudgetNotificationService.notifyIfNeeded(progress: budgetProgress, month: month)
+            PaymentReminderService.scheduleIfNeeded(payments: recurring, subscriptions: subscriptions)
         }
         .onChange(of: budgetSignature) { _, _ in
             BudgetNotificationService.notifyIfNeeded(progress: budgetProgress, month: month)
