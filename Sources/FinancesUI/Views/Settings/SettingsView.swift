@@ -12,17 +12,25 @@ struct SettingsView: View {
 
     @State private var confirmLoadDemo = false
     @State private var confirmClear = false
+    @State private var importedBackup: BackupEnvelope?
+    @State private var importSummary: RestoreSummary?
+    @State private var csvPreview: CSVImportPreview?
+    @State private var csvSummary: CSVImportSummary?
+
+    private var marketingVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
 
     private var appVersion: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-        return "\(version) (\(build))"
+        return "\(marketingVersion) (\(build))"
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 dataCard
+                backupCard
                 exportCard
                 aboutCard
             }
@@ -33,6 +41,11 @@ struct SettingsView: View {
         .alert("Загрузить демо-данные?", isPresented: $confirmLoadDemo) {
             Button("Загрузить", role: .destructive) {
                 do {
+                    try BackupStore.createAutomaticBackup(
+                        context: context,
+                        reason: "before-demo",
+                        appVersion: marketingVersion
+                    )
                     try DemoData.seed(context: context, replace: true)
                 } catch {
                     ErrorCenter.shared.report(error)
@@ -103,6 +116,69 @@ struct SettingsView: View {
         }
     }
 
+    private var backupCard: some View {
+        CardView {
+            VStack(alignment: .leading, spacing: 14) {
+                SectionHeader(
+                    title: "Резервные копии",
+                    subtitle: "JSON со всеми данными и версией схемы",
+                    icon: "shippingbox.fill",
+                    tint: .orange
+                )
+
+                settingsRow(
+                    icon: "square.and.arrow.up",
+                    tint: .orange,
+                    title: "Экспортировать бэкап",
+                    subtitle: "доходы, расходы, платежи и подписки",
+                    actionTitle: "Экспорт"
+                ) {
+                    do {
+                        try BackupExporter.export(context: context, appVersion: marketingVersion)
+                    } catch {
+                        ErrorCenter.shared.report(error)
+                    }
+                }
+
+                Divider()
+
+                settingsRow(
+                    icon: "square.and.arrow.down",
+                    tint: .blue,
+                    title: "Импортировать бэкап",
+                    subtitle: "с предпросмотром и выбором режима",
+                    actionTitle: "Импорт"
+                ) {
+                    do {
+                        if let envelope = try BackupExporter.chooseBackup() {
+                            importedBackup = envelope
+                        }
+                    } catch {
+                        ErrorCenter.shared.report(error)
+                    }
+                }
+
+                Divider()
+
+                settingsRow(
+                    icon: "folder",
+                    tint: .secondary,
+                    title: "Папка автобэкапов",
+                    subtitle: "последние копии перед очисткой и импортом",
+                    actionTitle: "Открыть"
+                ) {
+                    BackupExporter.openBackupsFolder()
+                }
+
+                Text(
+                    "Автобэкапы создаются перед очисткой, заменой демо-данных и восстановлением. Хранятся последние 10 копий."
+                )
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
     private var exportCard: some View {
         CardView {
             VStack(alignment: .leading, spacing: 14) {
@@ -127,9 +203,29 @@ struct SettingsView: View {
                     }
                 }
 
-                Text("Файл сохраняется в кодировке UTF-8 с разделителем «;». Даты — в формате ДД.ММ.ГГГГ.")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                Divider()
+
+                settingsRow(
+                    icon: "tablecells.badge.ellipsis",
+                    tint: .blue,
+                    title: "Импортировать операции из CSV",
+                    subtitle: "дата, раздел, тип, категория, сумма, комментарий",
+                    actionTitle: "Импорт"
+                ) {
+                    do {
+                        if let preview = try Exporter.chooseCSV() {
+                            csvPreview = preview
+                        }
+                    } catch {
+                        ErrorCenter.shared.report(error)
+                    }
+                }
+
+                Text(
+                    "CSV: UTF-8, разделитель «;» или «,», даты ISO/ДД.ММ.ГГГГ, суммы с точкой или запятой. Перед импортом создаётся бэкап."
+                )
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
             }
         }
     }

@@ -30,6 +30,14 @@ struct RecurringEditorSheet: View {
         return values.sorted()
     }
 
+    private var validationMessage: String? {
+        InputValidation.titleError(draft.title)
+            ?? InputValidation.amountError(draft.baseAmount)
+            ?? InputValidation.roundingStepError(draft.roundingStep)
+            ?? InputValidation.startDateError(draft.startDate)
+            ?? InputValidation.noteError(draft.note)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -150,6 +158,12 @@ struct RecurringEditorSheet: View {
             Divider()
 
             HStack {
+                if let validationMessage {
+                    Text(validationMessage)
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                }
+
                 Button("Отмена") {
                     dismiss()
                 }
@@ -162,7 +176,7 @@ struct RecurringEditorSheet: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.defaultAction)
-                .disabled(draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.baseAmount <= 0)
+                .disabled(validationMessage != nil)
             }
             .padding(16)
         }
@@ -170,6 +184,7 @@ struct RecurringEditorSheet: View {
     }
 
     private func save() {
+        guard validationMessage == nil else { return }
         let title = draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
             if let existing {

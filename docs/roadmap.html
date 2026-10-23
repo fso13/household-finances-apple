@@ -97,7 +97,7 @@
         <div class="timeline">
           <article class="timeline-item">
             <div class="timeline-meta">
-              <span class="badge badge-now">в работе</span>
+              <span class="badge badge-now">готово</span>
               <span>0–2 недели</span>
             </div>
             <h2>v1.0.1 — Надёжность и фундамент</h2>
@@ -113,7 +113,7 @@
 
           <article class="timeline-item">
             <div class="timeline-meta">
-              <span class="badge badge-next">следующий</span>
+              <span class="badge badge-next">в работе</span>
               <span>2–6 недель</span>
             </div>
             <h2>v1.1 — Данные и доверие</h2>
@@ -121,8 +121,8 @@
             <ul class="timeline-list">
               <li>JSON-бэкап и восстановление</li>
               <li>Мастер импорта CSV с маппингом колонок</li>
-              <li>Автобэкапы перед очисткой и миграциями</li>
-              <li>VersionedSchema V1 → V2 и деньги в копейках</li>
+              <li>Автобэкапы перед очисткой и импортом</li>
+              <li>Схема V1; V2 и копейки — следующий шаг</li>
             </ul>
           </article>
 
@@ -213,43 +213,43 @@
 
         <div class="debt-grid">
           <article class="debt">
-            <div class="debt-head"><h3>Нет автотестов</h3><span class="pill">P0 · M</span></div>
-            <p>Округления, статистика и календарь проверяются вручную. Регрессии ловятся после релиза.</p>
-          </article>
-
-          <article class="debt">
-            <div class="debt-head"><h3>Нет миграций SwiftData</h3><span class="pill">P0 · M</span></div>
-            <p>Любое изменение модели ломает существующий store. Нужны VersionedSchema и план миграций.</p>
-          </article>
-
-          <article class="debt">
             <div class="debt-head"><h3>Деньги в Double</h3><span class="pill">P0 · M</span></div>
-            <p>Ошибки округления и блокировка мультивалютности. Переходим на целые копейки.</p>
+            <p>Копейки теряются на средних и округлениях. Переход на целые копейки требует схемы V2.</p>
           </article>
 
           <article class="debt">
-            <div class="debt-head"><h3>Молчаливые ошибки</h3><span class="pill">P0 · S</span></div>
-            <p><code>try? context.save()</code> скрывает проблемы. Нужны AppError, баннер и OSLog.</p>
-          </article>
-
-          <article class="debt">
-            <div class="debt-head"><h3>Snapshot-код в release</h3><span class="pill">P0 · S</span></div>
-            <p>Служебный раннер и флаги попадают в production. Убираем через debug-only.</p>
-          </article>
-
-          <article class="debt">
-            <div class="debt-head"><h3>Нет CI</h3><span class="pill">P0 · M</span></div>
-            <p>Сборка и тесты не проверяются на pull request. Добавляем GitHub Actions и артефакт.</p>
-          </article>
-
-          <article class="debt">
-            <div class="debt-head"><h3>Accessibility</h3><span class="pill">P0 · M</span></div>
-            <p>Иконки-кнопки без подписей, графики без VoiceOver-описаний. Нужен аудит.</p>
+            <div class="debt-head"><h3>Схема V2 и миграция</h3><span class="pill">P0 · M</span></div>
+            <p>V1 и план миграций готовы, но изменение денежных полей ещё не выпущено.</p>
           </article>
 
           <article class="debt">
             <div class="debt-head"><h3>Агрегаты во view-body</h3><span class="pill">P1 · M</span></div>
             <p>Все записи грузятся в память, фильтры считаются при каждом рендере. Нужны view models и предикаты.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Даты из Date()</h3><span class="pill">P1 · S</span></div>
+            <p>Часть расчётов всё ещё берёт текущую дату внутри моделей. Нужен единый Clock.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Нет пагинации</h3><span class="pill">P1 · M</span></div>
+            <p>Таблицы показывают все записи. На десятках тысяч строк понадобятся индексы и подгрузка.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Нет UI-тестов</h3><span class="pill">P1 · M</span></div>
+            <p>Есть 57 unit-тестов и snapshot-раннер, но критические сценарии не проверяются XCUITest.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>Локализация и валюта</h3><span class="pill">P2 · M</span></div>
+            <p>Строки, RUB и формат дат зашиты в код. String Catalog и мультивалютность — в v2.0.</p>
+          </article>
+
+          <article class="debt">
+            <div class="debt-head"><h3>CSV без маппинга</h3><span class="pill">P2 · S</span></div>
+            <p>Колонки распознаются по алиасам. Для нестандартных выписок понадобится ручной маппинг.</p>
           </article>
         </div>
       </div>
@@ -259,8 +259,8 @@
       <div class="wrap">
         <div class="section-head">
           <p class="kicker">Ближайшие задачи</p>
-          <h2>v1.0.1 по шагам</h2>
-          <p>Каждая задача — отдельный issue с критериями готовности. Порядок соответствует зависимостям.</p>
+          <h2>v1.1 по шагам</h2>
+          <p>Сохранность данных уже в основной ветке; остался переход на копейки и схема V2.</p>
         </div>
 
         <div class="table-card">
@@ -270,16 +270,14 @@
                 <tr><th>#</th><th>Задача</th><th>Метка</th><th>Статус</th></tr>
               </thead>
               <tbody>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/1">1</a></td><td>Разделить на FinancesCore / FinancesUI / FinancesApp</td><td>tech-debt · P0</td><td>в работе</td></tr>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/2">2</a></td><td>Тесты округлений, статистики и календаря</td><td>testing · P0</td><td>в работе</td></tr>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/3">3</a></td><td>Убрать snapshot-раннер из release</td><td>ci · P0</td><td>запланировано</td></tr>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/4">4</a></td><td>AppError, пользовательские ошибки и OSLog</td><td>core · P0</td><td>запланировано</td></tr>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/5">5</a></td><td>Экран восстановления store вместо fatalError</td><td>core · P0</td><td>запланировано</td></tr>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/6">6</a></td><td>Undo/redo и подтверждение удаления</td><td>feature · P0</td><td>запланировано</td></tr>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/7">7</a></td><td>Accessibility: кнопки, таблицы, графики</td><td>ui · P0</td><td>запланировано</td></tr>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/8">8</a></td><td>Линтер, форматтер и мёртвый код</td><td>ci · P1</td><td>запланировано</td></tr>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/9">9</a></td><td>CI: сборка, тесты и линт</td><td>ci · P0</td><td>в работе</td></tr>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/10">10</a></td><td>Версия, build-номер и CHANGELOG</td><td>docs · P1</td><td>запланировано</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/13">13</a></td><td>JSON-бэкап и восстановление</td><td>data · P0</td><td>готово</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/14">14</a></td><td>Автобэкапы перед опасными действиями</td><td>data · P0</td><td>готово</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/15">15</a></td><td>Машиночитаемый CSV-экспорт</td><td>data · P0</td><td>готово</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/16">16</a></td><td>Импорт CSV с предпросмотром</td><td>data · P0</td><td>готово</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/17">17</a></td><td>Валидация сумм и дат</td><td>ui · P1</td><td>готово</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/18">18</a></td><td>Детерминированные демо-данные</td><td>testing · P1</td><td>готово</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/11">11</a></td><td>VersionedSchema V1 и план миграций</td><td>core · P0</td><td>частично</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/12">12</a></td><td>Деньги в копейках и схема V2</td><td>core · P0</td><td>запланировано</td></tr>
               </tbody>
             </table>
           </div>

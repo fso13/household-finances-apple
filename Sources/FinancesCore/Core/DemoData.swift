@@ -5,14 +5,18 @@ import SwiftData
 
 @MainActor
 package enum DemoData {
-    package static func seed(context: ModelContext, replace: Bool = false) throws {
+    package static func seed(
+        context: ModelContext,
+        replace: Bool = false,
+        referenceDate: Date = Date()
+    ) throws {
         if replace {
             try clear(context: context)
         }
         let existing = try context.fetchCount(FetchDescriptor<IncomeEntry>())
         guard existing == 0 else { return }
 
-        let now = Date()
+        let now = referenceDate
         let currentMonth = now.startOfMonth
         let oldestMonth = currentMonth.addingMonths(-23)
         let employer = "ООО «Ромашка»"

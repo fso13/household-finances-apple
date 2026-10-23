@@ -13,6 +13,10 @@ package enum StoreLocation {
         folder.appendingPathComponent("Finances.store")
     }
 
+    package static var backupsFolder: URL {
+        folder.appendingPathComponent("Backups", isDirectory: true)
+    }
+
     package static func prepareFolder() throws {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     }

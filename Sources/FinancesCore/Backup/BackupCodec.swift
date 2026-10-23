@@ -1,0 +1,207 @@
+import Foundation
+import SwiftData
+
+// MARK: - Кодек бэкапа
+
+package enum BackupCodec {
+    package static func encode(_ envelope: BackupEnvelope) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+
+        do {
+            return try encoder.encode(envelope)
+        } catch {
+            AppLog.export.error("backup encode failed: \(error.localizedDescription, privacy: .public)")
+            throw AppError.exportFailed
+        }
+    }
+
+    package static func decode(_ data: Data) throws -> BackupEnvelope {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let envelope: BackupEnvelope
+        do {
+            envelope = try decoder.decode(BackupEnvelope.self, from: data)
+        } catch {
+            AppLog.import.error("backup decode failed: \(error.localizedDescription, privacy: .public)")
+            throw AppError.importFailed
+        }
+
+        guard envelope.format == BackupEnvelope.formatIdentifier,
+            envelope.formatVersion <= BackupEnvelope.currentFormatVersion
+        else {
+            throw AppError.importFailed
+        }
+
+        return envelope
+    }
+
+    package static func makeEnvelope(
+        context: ModelContext,
+        appVersion: String,
+        createdAt: Date = Date()
+    ) throws -> BackupEnvelope {
+        do {
+            let incomes = try context.fetch(FetchDescriptor<IncomeEntry>(sortBy: [SortDescriptor(\.date)]))
+            let expenses = try context.fetch(FetchDescriptor<ExpenseEntry>(sortBy: [SortDescriptor(\.date)]))
+            let recurring = try context.fetch(FetchDescriptor<RecurringPayment>(sortBy: [SortDescriptor(\.title)]))
+            let subscriptions = try context.fetch(FetchDescriptor<Subscription>(sortBy: [SortDescriptor(\.name)]))
+
+            return BackupEnvelope(
+                appVersion: appVersion,
+                createdAt: createdAt,
+                data: BackupData(
+                    incomes: incomes.map(IncomeBackup.init),
+                    expenses: expenses.map(ExpenseBackup.init),
+                    recurring: recurring.map(RecurringBackup.init),
+                    subscriptions: subscriptions.map(SubscriptionBackup.init)
+                )
+            )
+        } catch {
+            AppLog.export.error("backup fetch failed: \(error.localizedDescription, privacy: .public)")
+            throw AppError.exportFailed
+        }
+    }
+
+    @MainActor
+    package static func restore(
+        _ envelope: BackupEnvelope,
+        mode: RestoreMode,
+        context: ModelContext,
+        automaticBackupFolder: URL = StoreLocation.backupsFolder
+    ) throws -> RestoreSummary {
+        guard envelope.format == BackupEnvelope.formatIdentifier,
+            envelope.formatVersion <= BackupEnvelope.currentFormatVersion
+        else {
+            throw AppError.importFailed
+        }
+
+        if mode == .replace {
+            try BackupStore.createAutomaticBackup(
+                context: context,
+                reason: "before-restore",
+                in: automaticBackupFolder
+            )
+            try DemoData.clear(context: context)
+        }
+
+        let existingIncomes = try context.fetch(FetchDescriptor<IncomeEntry>())
+        let existingExpenses = try context.fetch(FetchDescriptor<ExpenseEntry>())
+        let existingRecurring = try context.fetch(FetchDescriptor<RecurringPayment>())
+        let existingSubscriptions = try context.fetch(FetchDescriptor<Subscription>())
+
+        var incomeKeys = Set(existingIncomes.map { incomeKey($0) })
+        var expenseKeys = Set(existingExpenses.map { expenseKey($0) })
+        var recurringKeys = Set(existingRecurring.map { recurringKey($0) })
+        var subscriptionKeys = Set(existingSubscriptions.map { subscriptionKey($0) })
+
+        var summary = RestoreSummary(mode: mode)
+
+        for item in envelope.data.incomes {
+            let key =
+                "\(item.date.startOfDay.timeIntervalSince1970)|\(item.amount)|\(item.type)|\(item.employer)|\(item.note)"
+            guard mode == .replace || !incomeKeys.contains(key) else {
+                summary.skipped += 1
+                continue
+            }
+            context.insert(
+                IncomeEntry(
+                    amount: item.amount,
+                    date: item.date,
+                    type: IncomeType(rawValue: item.type) ?? .other,
+                    employer: item.employer,
+                    note: item.note
+                )
+            )
+            incomeKeys.insert(key)
+            summary.inserted += 1
+        }
+
+        for item in envelope.data.expenses {
+            let key = "\(item.date.startOfDay.timeIntervalSince1970)|\(item.amount)|\(item.category)|\(item.note)"
+            guard mode == .replace || !expenseKeys.contains(key) else {
+                summary.skipped += 1
+                continue
+            }
+            context.insert(
+                ExpenseEntry(
+                    amount: item.amount,
+                    date: item.date,
+                    category: ExpenseCategory(rawValue: item.category) ?? .other,
+                    note: item.note
+                )
+            )
+            expenseKeys.insert(key)
+            summary.inserted += 1
+        }
+
+        for item in envelope.data.recurring {
+            let key = "\(item.title)|\(item.category)|\(item.baseAmount)"
+            guard mode == .replace || !recurringKeys.contains(key) else {
+                summary.skipped += 1
+                continue
+            }
+            context.insert(
+                RecurringPayment(
+                    title: item.title,
+                    category: ExpenseCategory(rawValue: item.category) ?? .other,
+                    baseAmount: item.baseAmount,
+                    rounding: RoundingRule(rawValue: item.rounding) ?? .none,
+                    roundingStep: item.roundingStep,
+                    frequency: PaymentFrequency(rawValue: item.frequency) ?? .monthly,
+                    dayOfMonth: item.dayOfMonth,
+                    startDate: item.startDate,
+                    isActive: item.isActive,
+                    note: item.note
+                )
+            )
+            recurringKeys.insert(key)
+            summary.inserted += 1
+        }
+
+        for item in envelope.data.subscriptions {
+            let key = "\(item.name)|\(item.amount)|\(item.cycle)"
+            guard mode == .replace || !subscriptionKeys.contains(key) else {
+                summary.skipped += 1
+                continue
+            }
+            context.insert(
+                Subscription(
+                    name: item.name,
+                    amount: item.amount,
+                    cycle: SubscriptionCycle(rawValue: item.cycle) ?? .monthly,
+                    startDate: item.startDate,
+                    isActive: item.isActive,
+                    note: item.note,
+                    icon: item.icon,
+                    tint: TintColor(rawValue: item.tint) ?? .purple
+                )
+            )
+            subscriptionKeys.insert(key)
+            summary.inserted += 1
+        }
+
+        try Persistence.save(context, operation: "backup.restore")
+        return summary
+    }
+
+    // MARK: - Ключи для merge
+
+    private static func incomeKey(_ entry: IncomeEntry) -> String {
+        "\(entry.date.startOfDay.timeIntervalSince1970)|\(entry.amount)|\(entry.type.rawValue)|\(entry.employer)|\(entry.note)"
+    }
+
+    private static func expenseKey(_ entry: ExpenseEntry) -> String {
+        "\(entry.date.startOfDay.timeIntervalSince1970)|\(entry.amount)|\(entry.category.rawValue)|\(entry.note)"
+    }
+
+    private static func recurringKey(_ payment: RecurringPayment) -> String {
+        "\(payment.title)|\(payment.category.rawValue)|\(payment.baseAmount)"
+    }
+
+    private static func subscriptionKey(_ subscription: Subscription) -> String {
+        "\(subscription.name)|\(subscription.amount)|\(subscription.cycle.rawValue)"
+    }
+}

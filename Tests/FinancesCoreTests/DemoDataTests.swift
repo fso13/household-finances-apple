@@ -35,6 +35,21 @@ final class DemoDataTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<ExpenseEntry>()), expenseCount)
     }
 
+    func testSeedIsDeterministicForReferenceDate() throws {
+        let reference = makeDate(2026, 10, 23)
+        let first = try makeContext()
+        let second = try makeContext()
+        try DemoData.seed(context: first, referenceDate: reference)
+        try DemoData.seed(context: second, referenceDate: reference)
+
+        let firstIncomes = try first.fetch(FetchDescriptor<IncomeEntry>(sortBy: [SortDescriptor(\.date)]))
+        let secondIncomes = try second.fetch(FetchDescriptor<IncomeEntry>(sortBy: [SortDescriptor(\.date)]))
+
+        XCTAssertEqual(firstIncomes.count, secondIncomes.count)
+        XCTAssertEqual(firstIncomes.map(\.amount), secondIncomes.map(\.amount))
+        XCTAssertTrue(firstIncomes.allSatisfy { $0.date <= reference })
+    }
+
     func testClearRemovesEverything() throws {
         let context = try makeContext()
         try DemoData.seed(context: context)

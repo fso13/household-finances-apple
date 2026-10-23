@@ -17,12 +17,11 @@ final class AppBootstrap: ObservableObject {
     func load() {
         do {
             try StoreLocation.prepareFolder()
-            let configuration = ModelConfiguration("Finances", url: StoreLocation.storeURL)
+            let schema = Schema(versionedSchema: FinancesSchemaV1.self)
+            let configuration = ModelConfiguration("Finances", schema: schema, url: StoreLocation.storeURL)
             let newContainer = try ModelContainer(
-                for: IncomeEntry.self,
-                ExpenseEntry.self,
-                RecurringPayment.self,
-                Subscription.self,
+                for: schema,
+                migrationPlan: FinancesMigrationPlan.self,
                 configurations: configuration
             )
             newContainer.mainContext.autosaveEnabled = true

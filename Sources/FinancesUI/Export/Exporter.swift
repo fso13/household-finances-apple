@@ -31,9 +31,9 @@ enum Exporter {
         for income in incomes {
             rows.append([
                 "Доход",
-                shortDate(income.date),
+                CSVCodec.machineDate(income.date),
                 income.type.title,
-                Fmt.plain(income.amount, decimals: 2),
+                CSVCodec.machineNumber(income.amount),
                 [income.employer, income.note].filter { !$0.isEmpty }.joined(separator: " — "),
             ])
         }
@@ -41,9 +41,9 @@ enum Exporter {
         for expense in expenses {
             rows.append([
                 "Расход",
-                shortDate(expense.date),
+                CSVCodec.machineDate(expense.date),
                 expense.category.title,
-                Fmt.plain(expense.amount, decimals: 2),
+                CSVCodec.machineNumber(expense.amount),
                 expense.note,
             ])
         }
@@ -51,9 +51,9 @@ enum Exporter {
         for payment in recurring {
             rows.append([
                 "Обязательный платёж",
-                shortDate(payment.startDate),
+                CSVCodec.machineDate(payment.startDate),
                 payment.category.title,
-                Fmt.plain(payment.payableAmount, decimals: 2),
+                CSVCodec.machineNumber(payment.payableAmount),
                 [
                     payment.title,
                     payment.frequency.title,
@@ -66,9 +66,9 @@ enum Exporter {
         for subscription in subscriptions {
             rows.append([
                 "Подписка",
-                shortDate(subscription.startDate),
+                CSVCodec.machineDate(subscription.startDate),
                 "Подписки",
-                Fmt.plain(subscription.amount, decimals: 2),
+                CSVCodec.machineNumber(subscription.amount),
                 [
                     subscription.name,
                     subscription.cycle.title,
@@ -78,10 +78,7 @@ enum Exporter {
             ])
         }
 
-        let csv =
-            rows
-            .map { row in row.map(escape).joined(separator: ";") }
-            .joined(separator: "\r\n")
+        let data = CSVCodec.encode(rows: rows, delimiter: ";", bom: true)
 
         let panel = NSSavePanel()
         panel.title = "Экспорт финансов в CSV"
@@ -90,10 +87,6 @@ enum Exporter {
         panel.canCreateDirectories = true
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        let payload = "\u{FEFF}" + csv
-        guard let data = payload.data(using: .utf8) else {
-            throw AppError.exportFailed
-        }
 
         do {
             try data.write(to: url, options: .atomic)
@@ -103,22 +96,26 @@ enum Exporter {
         }
     }
 
-    private static func escape(_ value: String) -> String {
-        let cleaned =
-            value
-            .replacingOccurrences(of: "\r\n", with: " ")
-            .replacingOccurrences(of: "\n", with: " ")
-        if cleaned.contains(";") || cleaned.contains("\"") {
-            return "\"" + cleaned.replacingOccurrences(of: "\"", with: "\"\"") + "\""
-        }
-        return cleaned
-    }
+    static func chooseCSV() throws -> CSVImportPreview? {
+        let panel = NSOpenPanel()
+        panel.title = "Импорт операций из CSV"
+        panel.allowedContentTypes = [.commaSeparatedText, .plainText]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
 
-    private static func shortDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        formatter.dateFormat = "dd.MM.yyyy"
-        return formatter.string(from: date)
+        guard panel.runModal() == .OK, let url = panel.url else {
+            return nil
+        }
+
+        do {
+            let data = try Data(contentsOf: url)
+            return try CSVImporter.preview(data: data)
+        } catch let error as AppError {
+            throw error
+        } catch {
+            AppLog.import.error("csv read failed: \(error.localizedDescription, privacy: .public)")
+            throw AppError.importFailed
+        }
     }
 
     private static func fileStamp() -> String {

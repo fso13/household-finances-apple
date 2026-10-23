@@ -31,9 +31,6 @@ fi
 
 if [ -n "$BUILD" ]; then
     /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD}" "$APP_DIR/Contents/Info.plist"
-else
-    BUILD="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
-    /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD}" "$APP_DIR/Contents/Info.plist"
 fi
 
 chmod 644 "$APP_DIR/Contents/Info.plist"

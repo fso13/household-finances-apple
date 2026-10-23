@@ -14,6 +14,12 @@ struct IncomeEditorSheet: View {
         _draft = State(initialValue: IncomeDraft(entry: existing))
     }
 
+    private var validationMessage: String? {
+        InputValidation.amountError(draft.amount)
+            ?? InputValidation.entryDateError(draft.date)
+            ?? InputValidation.noteError(draft.note)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -46,7 +52,7 @@ struct IncomeEditorSheet: View {
                         }
                     }
 
-                    DatePicker("Дата", selection: $draft.date, displayedComponents: .date)
+                    DatePicker("Дата", selection: $draft.date, in: ...Date(), displayedComponents: .date)
                 }
 
                 Section("Детали") {
@@ -61,10 +67,11 @@ struct IncomeEditorSheet: View {
             Divider()
 
             HStack {
-                Text("Сумма должна быть больше нуля")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .opacity(draft.amount > 0 ? 0 : 1)
+                if let validationMessage {
+                    Text(validationMessage)
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                }
                 Spacer()
                 Button("Отмена") {
                     dismiss()
@@ -76,7 +83,7 @@ struct IncomeEditorSheet: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.defaultAction)
-                .disabled(draft.amount <= 0)
+                .disabled(validationMessage != nil)
             }
             .padding(16)
         }
@@ -84,6 +91,7 @@ struct IncomeEditorSheet: View {
     }
 
     private func save() {
+        guard validationMessage == nil else { return }
         let amount = draft.amount
         let date = draft.date.startOfDay
         do {

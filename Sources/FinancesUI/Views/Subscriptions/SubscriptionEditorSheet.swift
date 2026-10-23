@@ -30,6 +30,13 @@ struct SubscriptionEditorSheet: View {
         draft.startDate.nextOccurrence(everyMonths: draft.cycle.months, from: draft.startDate)
     }
 
+    private var validationMessage: String? {
+        InputValidation.titleError(draft.name)
+            ?? InputValidation.amountError(draft.amount)
+            ?? InputValidation.startDateError(draft.startDate)
+            ?? InputValidation.noteError(draft.note)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -163,6 +170,12 @@ struct SubscriptionEditorSheet: View {
             Divider()
 
             HStack {
+                if let validationMessage {
+                    Text(validationMessage)
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                }
+
                 Button("Отмена") {
                     dismiss()
                 }
@@ -175,10 +188,7 @@ struct SubscriptionEditorSheet: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.defaultAction)
-                .disabled(
-                    draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        || draft.amount <= 0
-                )
+                .disabled(validationMessage != nil)
             }
             .padding(16)
         }
@@ -186,6 +196,7 @@ struct SubscriptionEditorSheet: View {
     }
 
     private func save() {
+        guard validationMessage == nil else { return }
         let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
             if let existing {
