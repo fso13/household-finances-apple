@@ -25,6 +25,14 @@ struct BudgetsView: View {
         BudgetService.summary(progress)
     }
 
+    private var forecast: MonthForecast {
+        ForecastService.forecast(
+            expenses: expenses,
+            month: month,
+            categories: Set(progress.map(\.category))
+        )
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -45,6 +53,8 @@ struct BudgetsView: View {
                         .frame(height: 300)
                     }
                 } else {
+                    forecastCard
+
                     LazyVGrid(
                         columns: [GridItem(.adaptive(minimum: 340), spacing: 16, alignment: .top)],
                         alignment: .leading,
@@ -168,6 +178,37 @@ struct BudgetsView: View {
                 tint: .secondary
             )
         }
+    }
+
+    private var forecastCard: some View {
+        CardView(padding: 14) {
+            HStack(spacing: 14) {
+                IconTile(symbol: "chart.line.uptrend.xyaxis", tint: .teal, size: 34)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Прогноз расходов до конца месяца")
+                        .font(.callout.weight(.medium))
+                    Text(forecastSubtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(forecast.daysElapsed == 0 ? "—" : Fmt.moneyRounded(forecast.projectedExpense))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.teal)
+            }
+        }
+    }
+
+    private var forecastSubtitle: String {
+        if forecast.daysElapsed == 0 {
+            return "месяц ещё не начался"
+        }
+        if forecast.isComplete {
+            return "месяц завершён · \(forecast.daysInMonth) дней"
+        }
+        return
+            "средний расход \(Fmt.moneyRounded(forecast.averageDailyExpense)) в день · прошло \(forecast.daysElapsed) из \(forecast.daysInMonth) дней"
     }
 
     private var unbudgetedCategoriesCount: Int {
