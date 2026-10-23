@@ -1,5 +1,6 @@
 import AppKit
 import CoreGraphics
+import PDFKit
 import FinancesCore
 import SwiftUI
 import UniformTypeIdentifiers
@@ -23,12 +24,23 @@ struct AnalyticsReportData {
 @MainActor
 enum AnalyticsPDFExporter {
     static func export(_ data: AnalyticsReportData) {
+        guard let pdf = pdfData(data) else { return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.pdf]
         panel.nameFieldStringValue = suggestedName(for: data)
         panel.canCreateDirectories = true
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        try? pdf.write(to: url)
+    }
 
+    static func printReport(_ data: AnalyticsReportData) {
+        guard let pdf = pdfData(data), let document = PDFDocument(data: pdf) else { return }
+        let view = PDFView(frame: NSRect(x: 0, y: 0, width: 900, height: 1200))
+        view.document = document
+        view.print(with: NSPrintInfo.shared, autoRotate: true)
+    }
+
+    static func pdfData(_ data: AnalyticsReportData) -> Data? {
         let renderer = ImageRenderer(
             content: AnalyticsReportView(data: data)
                 .frame(width: 1000)
@@ -37,14 +49,19 @@ enum AnalyticsPDFExporter {
         )
         renderer.scale = 2
 
+        let output = NSMutableData()
         renderer.render { size, renderInContext in
-            var mediaBox = CGRect(origin: .zero, size: size)
-            guard let context = CGContext(url as CFURL, mediaBox: &mediaBox, nil) else { return }
-            context.beginPDFPage(nil)
+            var mediaBox = CGRect(x: 0, y: 0, width: 1000, height: 1400)
+            guard let consumer = CGDataConsumer(data: output as CFMutableData) else { return }
+            guard let context = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else { return }
+            let pageBox = CGRect(origin: .zero, size: size)
+            let pageInfo = [kCGPDFContextMediaBox as String: pageBox] as CFDictionary
+            context.beginPDFPage(pageInfo)
             renderInContext(context)
             context.endPDFPage()
             context.closePDF()
         }
+        return output.length > 0 ? output as Data : nil
     }
 
     private static func suggestedName(for data: AnalyticsReportData) -> String {

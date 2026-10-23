@@ -311,13 +311,19 @@ struct AnalyticsView: View {
         .navigationTitle("Аналитика")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    AnalyticsPDFExporter.export(reportData)
+                Menu {
+                    Button("Сохранить PDF…") {
+                        AnalyticsPDFExporter.export(reportData)
+                    }
+                    .keyboardShortcut("p", modifiers: [.command, .shift])
+                    Button("Печать…") {
+                        AnalyticsPDFExporter.printReport(reportData)
+                    }
+                    .keyboardShortcut("p", modifiers: .command)
                 } label: {
-                    Label("PDF", systemImage: "doc.richtext")
+                    Label("Экспорт", systemImage: "square.and.arrow.up")
                 }
-                .keyboardShortcut("p", modifiers: [.command, .shift])
-                .help("Сохранить PDF-отчёт")
+                .help("PDF и печать")
                 .disabled(!hasData)
             }
         }

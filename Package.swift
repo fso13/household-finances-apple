@@ -36,6 +36,12 @@ let package = Package(
             dependencies: ["FinancesCore", "FinancesLegacy"],
             path: "Tests/FinancesCoreTests",
             swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
+        .testTarget(
+            name: "FinancesUITests",
+            dependencies: ["FinancesUI", "FinancesCore"],
+            path: "Tests/FinancesUITests",
+            swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]
 )
