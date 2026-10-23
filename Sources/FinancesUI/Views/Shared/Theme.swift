@@ -323,6 +323,11 @@ struct DonutChart: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(centerTitle): \(Fmt.money(total))")
+            .accessibilityValue(
+                slices.prefix(4)
+                    .map { "\($0.title) \(Fmt.money($0.value))" }
+                    .joined(separator: ", ")
+            )
         }
     }
 }

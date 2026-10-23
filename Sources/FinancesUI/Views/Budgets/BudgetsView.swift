@@ -275,6 +275,11 @@ private struct BudgetCard: View {
                     }
                 }
                 .frame(height: 8)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(
+                    "\(progress.category.title): потрачено \(Fmt.money(progress.spent)) из \(Fmt.money(progress.limit))"
+                )
+                .accessibilityValue(progress.isOver ? "перерасход" : "осталось \(Fmt.money(progress.remaining))")
 
                 HStack(alignment: .firstTextBaseline) {
                     Text(Fmt.money(progress.spent))

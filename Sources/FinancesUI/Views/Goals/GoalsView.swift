@@ -184,6 +184,10 @@ private struct GoalCard: View {
                     }
                 }
                 .frame(height: 8)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(goal.name): накоплено \(Fmt.money(goal.saved)) из \(Fmt.money(goal.target))")
+                .accessibilityValue(
+                    progress.isComplete ? "цель достигнута" : "осталось \(Fmt.money(progress.remaining))")
 
                 HStack(alignment: .firstTextBaseline) {
                     Text(Fmt.money(goal.saved))
