@@ -5,7 +5,6 @@ import FinancesCore
 
 struct DashboardView: View {
     @Environment(\.modelContext) private var context
-    @EnvironmentObject private var appState: AppState
 
     @Query(sort: \IncomeEntry.date, order: .reverse) private var incomes: [IncomeEntry]
     @Query(sort: \ExpenseEntry.date, order: .reverse) private var expenses: [ExpenseEntry]
@@ -159,10 +158,6 @@ struct DashboardView: View {
         .onAppear {
             BudgetNotificationService.notifyIfNeeded(progress: budgetProgress, month: month)
             PaymentReminderService.scheduleIfNeeded(payments: recurring, subscriptions: subscriptions)
-            consumeQuickAdd()
-        }
-        .onChange(of: appState.pendingQuickAdd) { _, _ in
-            consumeQuickAdd()
         }
         .onChange(of: budgetSignature) { _, _ in
             BudgetNotificationService.notifyIfNeeded(progress: budgetProgress, month: month)
@@ -589,12 +584,6 @@ struct DashboardView: View {
                 }
             }
         }
-    }
-
-    private func consumeQuickAdd() {
-        guard let pending = appState.pendingQuickAdd else { return }
-        quickAdd = pending
-        appState.pendingQuickAdd = nil
     }
 
     // MARK: - Вспомогательное

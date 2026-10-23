@@ -47,6 +47,19 @@ struct FinancesApp: App {
             }
         }
 
+        Window("Быстрый ввод", id: "quickAdd") {
+            if let container = bootstrap.container {
+                QuickAddView()
+                    .environmentObject(appState)
+                    .modelContainer(container)
+            } else {
+                Text("Хранилище недоступно")
+                    .padding(40)
+            }
+        }
+        .defaultSize(width: 430, height: 470)
+        .windowResizability(.contentSize)
+
         MenuBarExtra("Финансы", systemImage: "chart.pie.fill") {
             MenuBarContent()
                 .environmentObject(appState)
@@ -67,15 +80,20 @@ private struct MenuBarContent: View {
 
         Divider()
 
+        Button("Быстрый ввод") {
+            openWindow(id: "quickAdd")
+            NSApp.activate(ignoringOtherApps: true)
+        }
+
         Button("Добавить доход") {
             appState.requestQuickAdd(.income)
-            openWindow(id: "main")
+            openWindow(id: "quickAdd")
             NSApp.activate(ignoringOtherApps: true)
         }
 
         Button("Добавить расход") {
             appState.requestQuickAdd(.expense)
-            openWindow(id: "main")
+            openWindow(id: "quickAdd")
             NSApp.activate(ignoringOtherApps: true)
         }
 
