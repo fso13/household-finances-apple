@@ -135,6 +135,20 @@ struct AnalyticsView: View {
         Stats.quarterTotals(incomes: filteredIncomes, expenses: filteredExpenses)
     }
 
+    private var reportData: AnalyticsReportData {
+        AnalyticsReportData(
+            period: periodSubtitle,
+            income: totalIncome,
+            expense: totalExpense,
+            net: net,
+            savingsRate: savingsRate,
+            topExpenses: Array(expenseSlices.prefix(8)),
+            monthly: Array(buckets.suffix(12)),
+            changes: Array(comparisonChanges.prefix(5)),
+            generatedAt: Date()
+        )
+    }
+
     private var comparisonChanges: [CategoryChange] {
         switch comparisonMode {
         case .month:
@@ -295,6 +309,18 @@ struct AnalyticsView: View {
             .padding(20)
         }
         .navigationTitle("Аналитика")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    AnalyticsPDFExporter.export(reportData)
+                } label: {
+                    Label("PDF", systemImage: "doc.richtext")
+                }
+                .keyboardShortcut("p", modifiers: [.command, .shift])
+                .help("Сохранить PDF-отчёт")
+                .disabled(!hasData)
+            }
+        }
         .searchable(text: $search, prompt: "Поиск по операциям")
         .onChange(of: selectedYear) { _, newValue in
             if newValue == nil {
