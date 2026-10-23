@@ -102,8 +102,9 @@ enum Exporter {
 
     static func chooseCSV() throws -> CSVImportPreview? {
         let panel = NSOpenPanel()
-        panel.title = "Импорт операций из CSV"
-        panel.allowedContentTypes = [.commaSeparatedText, .plainText]
+        panel.title = "Импорт операций из CSV или OFX"
+        let ofxType = UTType(filenameExtension: "ofx") ?? .data
+        panel.allowedContentTypes = [.commaSeparatedText, .plainText, ofxType]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
 
@@ -113,6 +114,9 @@ enum Exporter {
 
         do {
             let data = try Data(contentsOf: url)
+            if url.pathExtension.lowercased() == "ofx" || looksLikeOFX(data) {
+                return try OFXImporter.preview(data: data)
+            }
             return try CSVImporter.preview(data: data)
         } catch let error as AppError {
             throw error
@@ -120,6 +124,12 @@ enum Exporter {
             AppLog.import.error("csv read failed: \(error.localizedDescription, privacy: .public)")
             throw AppError.importFailed
         }
+    }
+
+    private static func looksLikeOFX(_ data: Data) -> Bool {
+        guard let text = String(data: data, encoding: .utf8) else { return false }
+        return text.localizedCaseInsensitiveContains("<OFX")
+            || text.localizedCaseInsensitiveContains("OFXHEADER")
     }
 
     private static func fileStamp() -> String {

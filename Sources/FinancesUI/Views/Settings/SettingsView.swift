@@ -354,8 +354,8 @@ struct SettingsView: View {
                 settingsRow(
                     icon: "tablecells.badge.ellipsis",
                     tint: .blue,
-                    title: "Импортировать операции из CSV",
-                    subtitle: "дата, раздел, тип, категория, сумма, комментарий",
+                    title: "Импортировать операции",
+                    subtitle: "CSV или банковская выписка OFX",
                     actionTitle: "Импорт"
                 ) {
                     do {
@@ -368,7 +368,7 @@ struct SettingsView: View {
                 }
 
                 Text(
-                    "CSV: UTF-8, разделитель «;» или «,», даты ISO/ДД.ММ.ГГГГ, суммы с точкой или запятой. Перед импортом создаётся бэкап."
+                    "CSV: UTF-8, «;» или «,», даты ISO/ДД.ММ.ГГГГ. OFX: банковская выписка. Перед импортом создаётся бэкап."
                 )
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
