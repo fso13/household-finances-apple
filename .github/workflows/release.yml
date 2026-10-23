@@ -46,7 +46,7 @@ jobs:
         run: |
           ditto -c -k --norsrc --noextattr --keepParent \
             "dist/Финансы.app" "dist/Finances-${GITHUB_REF_NAME}.zip"
-          shasum -a 256 "dist/Finances-${GITHUB_REF_NAME}.zip" > "dist/checksums.txt"
+          ( cd dist && shasum -a 256 "Finances-${GITHUB_REF_NAME}.zip" > checksums.txt )
           cat "dist/checksums.txt"
 
       - name: Publish GitHub release
