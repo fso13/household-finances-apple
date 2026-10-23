@@ -8,10 +8,13 @@ import SwiftUI
 
 @MainActor
 final class AppBootstrap: ObservableObject {
+    static weak var shared: AppBootstrap?
+
     @Published private(set) var container: ModelContainer?
     @Published private(set) var error: AppError?
 
     init() {
+        AppBootstrap.shared = self
         load()
     }
 
