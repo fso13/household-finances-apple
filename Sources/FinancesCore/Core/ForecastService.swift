@@ -2,6 +2,18 @@ import Foundation
 
 // MARK: - Прогноз расходов на месяц
 
+package struct BalanceForecast {
+    package let incomeReceived: Double
+    package let expenseSpent: Double
+    package let projectedExpense: Double
+    package let upcomingRecurring: Double
+    package let daysRemaining: Int
+
+    package var projectedBalance: Double {
+        incomeReceived - projectedExpense
+    }
+}
+
 package struct MonthForecast {
     package let averageDailyExpense: Double
     package let projectedExpense: Double
@@ -12,6 +24,41 @@ package struct MonthForecast {
 }
 
 package enum ForecastService {
+    package static func balance(
+        incomes: [IncomeEntry],
+        expenses: [ExpenseEntry],
+        recurring: [RecurringPayment],
+        month: Date,
+        now: Date = Date()
+    ) -> BalanceForecast {
+        let monthForecast = forecast(expenses: expenses, month: month, now: now)
+        let incomeReceived =
+            incomes
+            .filter { $0.date.isSameMonth(as: month) }
+            .reduce(0) { $0 + $1.amount }
+        let expenseSpent =
+            expenses
+            .filter { $0.date.isSameMonth(as: month) }
+            .reduce(0) { $0 + $1.amount }
+        let today = now.startOfDay
+        let upcomingRecurring =
+            recurring
+            .filter(\.isActive)
+            .filter { payment in
+                let date = payment.nextPaymentDate(relativeTo: now)
+                return date.isSameMonth(as: month) && date > today
+            }
+            .reduce(0) { $0 + $1.payableAmount }
+
+        return BalanceForecast(
+            incomeReceived: incomeReceived,
+            expenseSpent: expenseSpent,
+            projectedExpense: monthForecast.projectedExpense,
+            upcomingRecurring: upcomingRecurring,
+            daysRemaining: max(0, monthForecast.daysInMonth - monthForecast.daysElapsed)
+        )
+    }
+
     package static func forecast(
         expenses: [ExpenseEntry],
         month: Date,

@@ -45,6 +45,31 @@ final class ForecastTests: XCTestCase {
         XCTAssertEqual(forecast.projectedExpense, 1_000 / 11 * 31, accuracy: 0.1)
     }
 
+    func testBalanceForecast() {
+        let forecast = ForecastService.balance(
+            incomes: [IncomeEntry(amount: 100_000, date: makeDate(2026, 10, 1), type: .salary)],
+            expenses: [expense(1_000, 1), expense(2_000, 5)],
+            recurring: [
+                RecurringPayment(
+                    title: "Интернет",
+                    category: .internet,
+                    baseAmount: 1_450,
+                    dayOfMonth: 20,
+                    startDate: makeDate(2026, 1, 20)
+                )
+            ],
+            month: makeDate(2026, 10, 1),
+            now: makeDate(2026, 10, 11)
+        )
+
+        XCTAssertEqual(forecast.incomeReceived, 100_000)
+        XCTAssertEqual(forecast.expenseSpent, 3_000)
+        XCTAssertEqual(forecast.projectedExpense, 3_000 / 11 * 31, accuracy: 0.1)
+        XCTAssertEqual(forecast.upcomingRecurring, 1_450)
+        XCTAssertEqual(forecast.daysRemaining, 20)
+        XCTAssertEqual(forecast.projectedBalance, 100_000 - 3_000 / 11 * 31, accuracy: 0.1)
+    }
+
     func testForecastForFutureMonth() {
         let forecast = ForecastService.forecast(
             expenses: [],

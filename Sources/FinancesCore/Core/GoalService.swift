@@ -79,8 +79,11 @@ package enum GoalService {
         GoalSummary(
             target: progress.reduce(0) { $0 + $1.goal.target },
             saved: progress.reduce(0) { $0 + $1.goal.saved },
-            count: progress.filter { !$0.isComplete }.count,
-            monthlyNeeded: progress.reduce(0) { $0 + ($1.monthlyNeeded ?? 0) }
+            count: progress.filter { !$0.isComplete && $0.goal.isActive }.count,
+            monthlyNeeded:
+                progress
+                .filter { $0.goal.isActive && !$0.isComplete }
+                .reduce(0) { $0 + ($1.monthlyNeeded ?? 0) }
         )
     }
 }

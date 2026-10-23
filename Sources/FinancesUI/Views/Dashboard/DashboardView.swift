@@ -87,6 +87,15 @@ struct DashboardView: View {
         BudgetService.progress(budgets: budgets, expenses: expenses, month: month)
     }
 
+    private var balanceForecast: BalanceForecast {
+        ForecastService.balance(
+            incomes: incomes,
+            expenses: expenses,
+            recurring: recurring,
+            month: month
+        )
+    }
+
     private var hasAnyData: Bool {
         !incomes.isEmpty || !expenses.isEmpty || !recurring.isEmpty || !subscriptions.isEmpty
     }
@@ -112,6 +121,7 @@ struct DashboardView: View {
                     }
                 } else {
                     kpiRow
+                    forecastCard
 
                     ViewThatFits(in: .horizontal) {
                         HStack(alignment: .top, spacing: 16) {
@@ -181,6 +191,73 @@ struct DashboardView: View {
             Spacer()
             MonthNavigator(month: $month)
         }
+    }
+
+    private var forecastCard: some View {
+        CardView(padding: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top) {
+                    SectionHeader(
+                        title: "Прогноз до конца месяца",
+                        subtitle: "по текущему темпу расходов",
+                        icon: "chart.line.uptrend.xyaxis",
+                        tint: .teal
+                    )
+                    Spacer()
+                    Text("осталось \(balanceForecast.daysRemaining) дн.")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+
+                HStack(spacing: 0) {
+                    forecastCell(
+                        "Получено доходов",
+                        Fmt.moneyRounded(balanceForecast.incomeReceived),
+                        color: .green
+                    )
+                    forecastDivider
+                    forecastCell(
+                        "Прогноз расходов",
+                        Fmt.moneyRounded(balanceForecast.projectedExpense),
+                        color: .orange
+                    )
+                    forecastDivider
+                    forecastCell(
+                        "Прогноз остатка",
+                        Fmt.moneyRounded(balanceForecast.projectedBalance),
+                        color: balanceForecast.projectedBalance >= 0 ? .teal : .red
+                    )
+                    forecastDivider
+                    forecastCell(
+                        "Предстоит оплатить",
+                        Fmt.moneyRounded(balanceForecast.upcomingRecurring),
+                        color: .blue
+                    )
+                }
+            }
+        }
+    }
+
+    private var forecastDivider: some View {
+        Divider()
+            .frame(height: 38)
+            .padding(.horizontal, 14)
+    }
+
+    private func forecastCell(_ title: String, _ value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Text(value)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var kpiRow: some View {
