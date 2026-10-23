@@ -1,3 +1,4 @@
+import AppKit
 import FinancesCore
 import FinancesUI
 import SwiftData
@@ -44,6 +45,44 @@ struct FinancesApp: App {
                 .keyboardShortcut("z", modifiers: [.command, .shift])
                 .disabled(!bootstrap.canRedo)
             }
+        }
+
+        MenuBarExtra("Финансы", systemImage: "chart.pie.fill") {
+            MenuBarContent()
+                .environmentObject(appState)
+        }
+        .menuBarExtraStyle(.menu)
+    }
+}
+
+private struct MenuBarContent: View {
+    @EnvironmentObject private var appState: AppState
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Открыть финансы") {
+            openWindow(id: "main")
+            NSApp.activate(ignoringOtherApps: true)
+        }
+
+        Divider()
+
+        Button("Добавить доход") {
+            appState.requestQuickAdd(.income)
+            openWindow(id: "main")
+            NSApp.activate(ignoringOtherApps: true)
+        }
+
+        Button("Добавить расход") {
+            appState.requestQuickAdd(.expense)
+            openWindow(id: "main")
+            NSApp.activate(ignoringOtherApps: true)
+        }
+
+        Divider()
+
+        Button("Выйти") {
+            NSApp.terminate(nil)
         }
     }
 }

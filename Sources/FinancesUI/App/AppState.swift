@@ -1,10 +1,20 @@
-import SwiftUI
+import Foundation
 
-/// Общее состояние навигации. Вынесено отдельно, чтобы служебный режим
-/// снимков экрана мог переключать разделы приложения.
-@MainActor
+package enum QuickAddKind: String, Identifiable, Hashable {
+    case income
+    case expense
+
+    package var id: String { rawValue }
+}
+
 package final class AppState: ObservableObject {
     @Published package var route: AppRoute? = .dashboard
+    @Published package var pendingQuickAdd: QuickAddKind?
 
     package init() {}
+
+    package func requestQuickAdd(_ kind: QuickAddKind) {
+        route = .dashboard
+        pendingQuickAdd = kind
+    }
 }
