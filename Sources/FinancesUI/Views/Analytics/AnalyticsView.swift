@@ -11,6 +11,7 @@ struct AnalyticsView: View {
     @State private var selectedQuarter: Int? = nil
     @State private var selectedTypes: Set<IncomeType> = []
     @State private var selectedCategories: Set<ExpenseCategory> = []
+    @State private var selectedTags: Set<String> = []
     @State private var search = ""
     @State private var comparisonMonth: Date = Date().startOfMonth
     @State private var comparisonMode: ComparisonMode = .month
@@ -43,6 +44,7 @@ struct AnalyticsView: View {
             || selectedQuarter != nil
             || !selectedTypes.isEmpty
             || !selectedCategories.isEmpty
+            || !selectedTags.isEmpty
             || !search.isEmpty
             || useCustomRange
     }
@@ -53,12 +55,13 @@ struct AnalyticsView: View {
             let matchesQuarter = useCustomRange || selectedQuarter == nil || entry.date.quarter == selectedQuarter
             let matchesRange = !useCustomRange || inRange(entry.date)
             let matchesType = selectedTypes.isEmpty || selectedTypes.contains(entry.type)
+            let matchesTags = TagParser.matches(entry.note, selected: selectedTags)
             let matchesSearch =
                 search.isEmpty
                 || entry.note.localizedCaseInsensitiveContains(search)
                 || entry.employer.localizedCaseInsensitiveContains(search)
                 || entry.type.title.localizedCaseInsensitiveContains(search)
-            return matchesYear && matchesQuarter && matchesRange && matchesType && matchesSearch
+            return matchesYear && matchesQuarter && matchesRange && matchesType && matchesTags && matchesSearch
         }
     }
 
@@ -68,11 +71,12 @@ struct AnalyticsView: View {
             let matchesQuarter = useCustomRange || selectedQuarter == nil || entry.date.quarter == selectedQuarter
             let matchesRange = !useCustomRange || inRange(entry.date)
             let matchesCategory = selectedCategories.isEmpty || selectedCategories.contains(entry.category)
+            let matchesTags = TagParser.matches(entry.note, selected: selectedTags)
             let matchesSearch =
                 search.isEmpty
                 || entry.note.localizedCaseInsensitiveContains(search)
                 || entry.category.title.localizedCaseInsensitiveContains(search)
-            return matchesYear && matchesQuarter && matchesRange && matchesCategory && matchesSearch
+            return matchesYear && matchesQuarter && matchesRange && matchesCategory && matchesTags && matchesSearch
         }
     }
 
@@ -147,6 +151,10 @@ struct AnalyticsView: View {
             changes: Array(comparisonChanges.prefix(5)),
             generatedAt: Date()
         )
+    }
+
+    private var availableTags: [TagCount] {
+        TagParser.counts(incomes: incomes, expenses: expenses)
     }
 
     private var comparisonChanges: [CategoryChange] {
@@ -443,6 +451,37 @@ struct AnalyticsView: View {
                     .frame(width: 176)
                     .help("Фильтр по категориям расходов")
 
+                    Menu {
+                        Button("Все теги") { selectedTags.removeAll() }
+                        Divider()
+                        ForEach(availableTags) { tag in
+                            Toggle(
+                                isOn: Binding(
+                                    get: { selectedTags.contains(tag.tag) },
+                                    set: { isOn in
+                                        if isOn {
+                                            selectedTags.insert(tag.tag)
+                                        } else {
+                                            selectedTags.remove(tag.tag)
+                                        }
+                                    }
+                                )
+                            ) {
+                                Text("#\(tag.tag) · \(tag.count)")
+                            }
+                        }
+                    } label: {
+                        Label(
+                            selectedTags.isEmpty
+                                ? "Все теги" : "Теги: \(selectedTags.count)",
+                            systemImage: "number"
+                        )
+                    }
+                    .menuStyle(.borderlessButton)
+                    .frame(width: 126)
+                    .help("Фильтр по #тегам в заметках")
+                    .disabled(availableTags.isEmpty)
+
                     Button {
                         showRangePicker = true
                     } label: {
@@ -507,6 +546,7 @@ struct AnalyticsView: View {
         selectedQuarter = nil
         selectedTypes.removeAll()
         selectedCategories.removeAll()
+        selectedTags.removeAll()
         search = ""
         useCustomRange = false
     }

@@ -134,7 +134,7 @@ package enum DemoData {
                         date: salaryDate,
                         type: .salary,
                         employer: employer,
-                        note: "Оклад за \(MonthFormat.monthTitle(month).lowercased())"
+                        note: "Оклад за \(MonthFormat.monthTitle(month).lowercased()) #работа"
                     ))
             }
 
@@ -146,7 +146,7 @@ package enum DemoData {
                         date: advanceDate,
                         type: .advance,
                         employer: employer,
-                        note: "Аванс за \(MonthFormat.monthTitle(month).lowercased())"
+                        note: "Аванс за \(MonthFormat.monthTitle(month).lowercased()) #работа"
                     ))
             }
 
@@ -204,7 +204,7 @@ package enum DemoData {
                         amount: rent.payableAmount,
                         date: rentDate,
                         category: .rent,
-                        note: "Аренда квартиры"
+                        note: "Аренда квартиры #дом"
                     ))
             }
 
@@ -267,7 +267,7 @@ package enum DemoData {
                         amount: 24_000 + Double((index * 3) % 7) * 1_150,
                         date: foodDate,
                         category: .food,
-                        note: "Продукты"
+                        note: "Продукты #быт"
                     ))
             }
 
@@ -278,7 +278,7 @@ package enum DemoData {
                         amount: 4_500 + Double((index * 5) % 4) * 620,
                         date: transportDate,
                         category: .transport,
-                        note: "Транспорт и такси"
+                        note: "Транспорт и такси #город"
                     ))
             }
 
@@ -289,7 +289,7 @@ package enum DemoData {
                         amount: 3_200 + Double((index * 2) % 5) * 850,
                         date: funDate,
                         category: .entertainment,
-                        note: "Кино, кафе, досуг"
+                        note: "Кино, кафе, досуг #отдых"
                     ))
             }
 
