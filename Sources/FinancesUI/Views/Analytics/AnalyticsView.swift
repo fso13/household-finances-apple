@@ -15,6 +15,10 @@ struct AnalyticsView: View {
     @State private var comparisonMonth: Date = Date().startOfMonth
     @State private var comparisonMode: ComparisonMode = .month
     @State private var comparisonYear: Int = Date().year
+    @State private var useCustomRange = false
+    @State private var rangeStart = Date().addingMonths(-3).startOfMonth
+    @State private var rangeEnd = Date()
+    @State private var showRangePicker = false
 
     private enum ComparisonMode: String, CaseIterable, Identifiable {
         case month
@@ -40,36 +44,42 @@ struct AnalyticsView: View {
             || !selectedTypes.isEmpty
             || !selectedCategories.isEmpty
             || !search.isEmpty
+            || useCustomRange
     }
 
     private var filteredIncomes: [IncomeEntry] {
         incomes.filter { entry in
-            let matchesYear = selectedYear == nil || entry.date.year == selectedYear
-            let matchesQuarter = selectedQuarter == nil || entry.date.quarter == selectedQuarter
+            let matchesYear = useCustomRange || selectedYear == nil || entry.date.year == selectedYear
+            let matchesQuarter = useCustomRange || selectedQuarter == nil || entry.date.quarter == selectedQuarter
+            let matchesRange = !useCustomRange || inRange(entry.date)
             let matchesType = selectedTypes.isEmpty || selectedTypes.contains(entry.type)
             let matchesSearch =
                 search.isEmpty
                 || entry.note.localizedCaseInsensitiveContains(search)
                 || entry.employer.localizedCaseInsensitiveContains(search)
                 || entry.type.title.localizedCaseInsensitiveContains(search)
-            return matchesYear && matchesQuarter && matchesType && matchesSearch
+            return matchesYear && matchesQuarter && matchesRange && matchesType && matchesSearch
         }
     }
 
     private var filteredExpenses: [ExpenseEntry] {
         expenses.filter { entry in
-            let matchesYear = selectedYear == nil || entry.date.year == selectedYear
-            let matchesQuarter = selectedQuarter == nil || entry.date.quarter == selectedQuarter
+            let matchesYear = useCustomRange || selectedYear == nil || entry.date.year == selectedYear
+            let matchesQuarter = useCustomRange || selectedQuarter == nil || entry.date.quarter == selectedQuarter
+            let matchesRange = !useCustomRange || inRange(entry.date)
             let matchesCategory = selectedCategories.isEmpty || selectedCategories.contains(entry.category)
             let matchesSearch =
                 search.isEmpty
                 || entry.note.localizedCaseInsensitiveContains(search)
                 || entry.category.title.localizedCaseInsensitiveContains(search)
-            return matchesYear && matchesQuarter && matchesCategory && matchesSearch
+            return matchesYear && matchesQuarter && matchesRange && matchesCategory && matchesSearch
         }
     }
 
     private var chartMonths: [Date] {
+        if useCustomRange {
+            return Stats.monthSpan(from: rangeStart, to: rangeEnd)
+        }
         if let year = selectedYear {
             if let quarter = selectedQuarter {
                 return Stats.monthsInQuarter(year: year, quarter: quarter)
@@ -401,10 +411,63 @@ struct AnalyticsView: View {
                     .frame(width: 176)
                     .help("Фильтр по категориям расходов")
 
+                    Button {
+                        showRangePicker = true
+                    } label: {
+                        Label(
+                            useCustomRange ? rangeShortTitle : "Диапазон",
+                            systemImage: useCustomRange
+                                ? "calendar.badge.checkmark" : "calendar"
+                        )
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .popover(isPresented: $showRangePicker, arrowEdge: .bottom) {
+                        rangePicker
+                    }
+                    .help("Произвольный диапазон дат")
+
                     Spacer(minLength: 0)
                 }
             }
         }
+    }
+
+    private var rangePicker: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Произвольный диапазон")
+                .font(.headline)
+            DatePicker("С", selection: $rangeStart, displayedComponents: .date)
+            DatePicker("По", selection: $rangeEnd, displayedComponents: .date)
+            HStack {
+                Button("Сбросить") {
+                    useCustomRange = false
+                    showRangePicker = false
+                }
+                Spacer()
+                Button("Применить") {
+                    if rangeStart > rangeEnd {
+                        swap(&rangeStart, &rangeEnd)
+                    }
+                    selectedYear = nil
+                    selectedQuarter = nil
+                    useCustomRange = true
+                    showRangePicker = false
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(16)
+        .frame(width: 280)
+    }
+
+    private func inRange(_ date: Date) -> Bool {
+        date >= rangeStart.startOfDay && date < rangeEnd.startOfDay.addingDays(1)
+    }
+
+    private var rangeShortTitle: String {
+        "\(MonthFormat.compactDay(rangeStart)) — \(MonthFormat.compactDay(rangeEnd))"
     }
 
     private func resetFilters() {
@@ -413,6 +476,7 @@ struct AnalyticsView: View {
         selectedTypes.removeAll()
         selectedCategories.removeAll()
         search = ""
+        useCustomRange = false
     }
 
     // MARK: - KPI
@@ -675,6 +739,9 @@ struct AnalyticsView: View {
     }
 
     private var periodSubtitle: String {
+        if useCustomRange {
+            return "\(MonthFormat.day(rangeStart)) — \(MonthFormat.day(rangeEnd))"
+        }
         if let year = selectedYear {
             if let quarter = selectedQuarter {
                 return MonthFormat.quarterTitle(year: year, quarter: quarter)
