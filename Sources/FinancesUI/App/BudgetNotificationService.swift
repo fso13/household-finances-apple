@@ -24,11 +24,15 @@ enum BudgetNotificationService {
         center.getNotificationSettings { settings in
             switch settings.authorizationStatus {
             case .authorized, .provisional:
-                deliver(alerts, center: center)
+                Task { @MainActor in
+                    deliver(alerts, center: center)
+                }
             case .notDetermined:
                 center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
                     if granted {
-                        deliver(alerts, center: center)
+                        Task { @MainActor in
+                            deliver(alerts, center: center)
+                        }
                     }
                 }
             default:
