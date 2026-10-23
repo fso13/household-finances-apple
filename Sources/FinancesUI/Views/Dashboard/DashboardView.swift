@@ -12,6 +12,12 @@ struct DashboardView: View {
     @Query private var subscriptions: [Subscription]
     @Query private var budgets: [Budget]
 
+    @AppStorage("dashboard.showForecast") private var showForecast = true
+    @AppStorage("dashboard.showCharts") private var showCharts = true
+    @AppStorage("dashboard.showFixed") private var showFixed = true
+    @AppStorage("dashboard.showSubscriptions") private var showSubscriptions = true
+    @AppStorage("dashboard.showBudgets") private var showBudgets = true
+
     @State private var month: Date = Date().startOfMonth
     @State private var quickAdd: QuickAddKind?
 

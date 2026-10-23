@@ -12,6 +12,11 @@ struct SettingsView: View {
 
     @AppStorage("budgetNotificationsEnabled") private var budgetNotificationsEnabled = true
     @AppStorage("paymentRemindersEnabled") private var paymentRemindersEnabled = true
+    @AppStorage("dashboard.showForecast") private var dashboardForecast = true
+    @AppStorage("dashboard.showCharts") private var dashboardCharts = true
+    @AppStorage("dashboard.showFixed") private var dashboardFixed = true
+    @AppStorage("dashboard.showSubscriptions") private var dashboardSubscriptions = true
+    @AppStorage("dashboard.showBudgets") private var dashboardBudgets = true
     @State private var confirmLoadDemo = false
     @State private var confirmClear = false
     @State private var activeSheet: SettingsSheet?
@@ -45,6 +50,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 dataCard
                 categoriesCard
+                dashboardCard
                 notificationsCard
                 backupCard
                 exportCard
@@ -167,6 +173,29 @@ struct SettingsView: View {
             }
         ) {
             CategoriesSettingsView()
+        }
+    }
+
+    private var dashboardCard: some View {
+        CardView {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(
+                    title: "Дашборд",
+                    subtitle: "какие карточки показывать на обзоре",
+                    icon: "rectangle.3.group.fill",
+                    tint: .indigo
+                )
+
+                Toggle("Прогноз до конца месяца", isOn: $dashboardForecast)
+                Toggle("Графики доходов и расходов", isOn: $dashboardCharts)
+                Toggle("Обязательные платежи", isOn: $dashboardFixed)
+                Toggle("Подписки", isOn: $dashboardSubscriptions)
+                Toggle("Бюджеты", isOn: $dashboardBudgets)
+
+                Text("KPI-строка с доходами, расходами и остатком остаётся всегда.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
         }
     }
 
