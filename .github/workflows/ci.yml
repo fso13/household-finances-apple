@@ -40,12 +40,7 @@ jobs:
           fi
 
       - name: Format check
-        run: |
-          if [ -f .swift-format ]; then
-            xcrun swift-format lint --strict --recursive Sources Tests
-          else
-            echo "No .swift-format yet; skipping."
-          fi
+        run: ./Scripts/lint.sh
 
       - name: Package app (release, ad-hoc)
         run: ./Scripts/package_app.sh release

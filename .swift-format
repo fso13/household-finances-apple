@@ -1,0 +1,17 @@
+{
+  "indentation": {
+    "spaces": 4
+  },
+  "indentConditionalCompilationBlocks": false,
+  "lineLength": 120,
+  "lineBreakBeforeControlFlowKeywords": false,
+  "lineBreakBeforeEachArgument": false,
+  "respectsExistingLineBreaks": true,
+  "rules": {
+    "AllPublicDeclarationsHaveDocumentation": false,
+    "NoAccessLevelOnExtensionDeclaration": false,
+    "NoBlockComments": false,
+    "NeverForceUnwrap": false,
+    "NeverUseForceTry": false
+  }
+}

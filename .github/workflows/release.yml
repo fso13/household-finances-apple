@@ -39,6 +39,7 @@ jobs:
       - name: Package app
         env:
           APP_VERSION: ${{ github.ref_name }}
+          APP_BUILD: ${{ github.run_number }}
         run: ./Scripts/package_app.sh release
 
       - name: Create release assets
