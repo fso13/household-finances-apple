@@ -2,6 +2,14 @@
 
 Все заметные изменения проекта. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версии — [SemVer](https://semver.org/lang/ru/).
 
+## [Unreleased] — v2.0
+
+### Добавлено
+
+- PDF-отчёт по расписанию: неделя или месяц, создание при запуске.
+- Папка Reports в Application Support.
+- 107 тестов.
+
 ## [1.5.0] — 2026-10-23
 
 ### Добавлено

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftData
 import SwiftUI
 import FinancesCore
@@ -17,6 +18,8 @@ struct SettingsView: View {
     @AppStorage("dashboard.showFixed") private var dashboardFixed = true
     @AppStorage("dashboard.showSubscriptions") private var dashboardSubscriptions = true
     @AppStorage("dashboard.showBudgets") private var dashboardBudgets = true
+    @AppStorage("scheduledReportEnabled") private var scheduledReportEnabled = false
+    @AppStorage("scheduledReportFrequency") private var scheduledReportFrequency = ReportFrequency.weekly.rawValue
     @State private var confirmLoadDemo = false
     @State private var confirmClear = false
     @State private var activeSheet: SettingsSheet?
@@ -54,6 +57,7 @@ struct SettingsView: View {
                 categoriesCard
                 categoryRulesCard
                 dashboardCard
+                scheduledReportCard
                 notificationsCard
                 backupCard
                 exportCard
@@ -226,6 +230,77 @@ struct SettingsView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
+        }
+    }
+
+    private var scheduledReportCard: some View {
+        CardView {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(
+                    title: "Отчёты по расписанию",
+                    subtitle: "локальный PDF в папку приложения",
+                    icon: "doc.badge.clock.fill",
+                    tint: .teal
+                )
+
+                Toggle("Создавать PDF-отчёт автоматически", isOn: $scheduledReportEnabled)
+                Picker("Частота", selection: $scheduledReportFrequency) {
+                    ForEach(ReportFrequency.allCases) { frequency in
+                        Text(frequency.title).tag(frequency.rawValue)
+                    }
+                }
+                .disabled(!scheduledReportEnabled)
+
+                HStack {
+                    Text("Проверка выполняется при запуске приложения.")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                    Button("Создать сейчас") {
+                        generateReport()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    Button("Открыть папку") {
+                        openReportsFolder()
+                    }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+                }
+            }
+        }
+        .alert(
+            "Отчёт готов",
+            isPresented: Binding(
+                get: { resultMessage != nil },
+                set: { newValue in if !newValue { resultMessage = nil } }
+            )
+        ) {
+            Button("Понятно", role: .cancel) { resultMessage = nil }
+        } message: {
+            Text(resultMessage ?? "")
+        }
+    }
+
+    private func generateReport() {
+        do {
+            let url = try ScheduledReportService.generate(container: context.container)
+            resultMessage = "PDF сохранён: \(url.path)"
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        } catch {
+            ErrorCenter.shared.report(error)
+        }
+    }
+
+    private func openReportsFolder() {
+        do {
+            try FileManager.default.createDirectory(
+                at: ScheduledReportService.reportsFolder,
+                withIntermediateDirectories: true
+            )
+            NSWorkspace.shared.open(ScheduledReportService.reportsFolder)
+        } catch {
+            ErrorCenter.shared.report(error)
         }
     }
 

@@ -36,6 +36,7 @@ package struct RootView: View {
         }
         .task {
             bootstrap()
+            ScheduledReportService.runIfNeeded(container: container)
         }
         .alert(
             "Что-то пошло не так",
