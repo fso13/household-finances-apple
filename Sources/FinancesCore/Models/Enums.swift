@@ -147,6 +147,7 @@ package struct ExpenseCategory: RawRepresentable, Codable, Identifiable, Hashabl
 package enum PaymentStatus: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case scheduled
     case paid
+    case partial
     case skipped
 
     package var id: String { rawValue }
@@ -155,6 +156,7 @@ package enum PaymentStatus: String, Codable, CaseIterable, Identifiable, Hashabl
         switch self {
         case .scheduled: "Запланирован"
         case .paid: "Оплачен"
+        case .partial: "Оплачен частично"
         case .skipped: "Пропущен"
         }
     }
@@ -163,6 +165,7 @@ package enum PaymentStatus: String, Codable, CaseIterable, Identifiable, Hashabl
         switch self {
         case .scheduled: "clock"
         case .paid: "checkmark.circle.fill"
+        case .partial: "circle.lefthalf.filled"
         case .skipped: "forward.fill"
         }
     }

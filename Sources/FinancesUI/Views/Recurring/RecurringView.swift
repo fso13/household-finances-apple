@@ -226,6 +226,9 @@ struct RecurringView: View {
         if item.status == .paid {
             return AnyView(TagBadge(text: "оплачен", color: .green, icon: "checkmark"))
         }
+        if item.status == .partial {
+            return AnyView(TagBadge(text: "частично", color: .orange, icon: "circle.lefthalf.filled"))
+        }
         if item.status == .skipped {
             return AnyView(TagBadge(text: "пропущен", color: .gray, icon: "forward.fill"))
         }
@@ -265,6 +268,9 @@ private struct RecurringCard: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
 
+    @State private var showPartial = false
+    @State private var partialAmount = ""
+
     private var month: Date { Date().startOfMonth }
 
     private var status: PaymentStatus {
@@ -292,6 +298,12 @@ private struct RecurringCard: View {
     private var statusBadge: some View {
         if status == .paid {
             TagBadge(text: "оплачено", color: .green, icon: "checkmark")
+        } else if status == .partial {
+            TagBadge(
+                text: "частично \(Fmt.money(currentPeriod?.paidAmount ?? 0))",
+                color: .orange,
+                icon: "circle.lefthalf.filled"
+            )
         } else if status == .skipped {
             TagBadge(text: "пропущен", color: .gray, icon: "forward.fill")
         } else if isOverdue {
@@ -427,7 +439,9 @@ private struct RecurringCard: View {
                             }
                         } label: {
                             Label(
-                                status == .paid ? "Оплачено" : "Записать оплату",
+                                status == .paid
+                                    ? "Оплачено"
+                                    : (status == .partial ? "Доплатить" : "Записать оплату"),
                                 systemImage: status == .paid ? "checkmark.circle.fill" : "plus.circle"
                             )
                             .font(.caption)
@@ -435,6 +449,18 @@ private struct RecurringCard: View {
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                         .disabled(!payment.isActive || status == .paid)
+                    }
+
+                    if payment.isActive && (status == .scheduled || status == .partial) {
+                        Button {
+                            partialAmount = ""
+                            showPartial = true
+                        } label: {
+                            Label("Частично", systemImage: "circle.lefthalf.filled")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                     }
 
                     if status == .scheduled && payment.isActive {
@@ -486,6 +512,32 @@ private struct RecurringCard: View {
         .contextMenu {
             Button("Изменить") { onEdit() }
             Button("Удалить", role: .destructive) { onDelete() }
+        }
+        .alert("Частичная оплата", isPresented: $showPartial) {
+            TextField("Сумма, ₽", text: $partialAmount)
+            Button("Отмена", role: .cancel) {}
+            Button("Записать") { recordPartial() }
+        } message: {
+            Text("Сколько оплачено сейчас? Остаток можно доплатить позже.")
+        }
+    }
+
+    private func recordPartial() {
+        let normalized =
+            partialAmount
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: ",", with: ".")
+        guard let amount = Double(normalized), amount > 0 else { return }
+        do {
+            try PaymentPeriodService.recordPartial(
+                payment,
+                month: month,
+                amount: amount,
+                context: context,
+                periods: periods
+            )
+        } catch {
+            ErrorCenter.shared.report(error)
         }
     }
 }

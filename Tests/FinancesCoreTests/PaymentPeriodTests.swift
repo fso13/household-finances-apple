@@ -154,6 +154,51 @@ final class PaymentPeriodTests: XCTestCase {
         )
     }
 
+    func testPartialPaymentAccumulatesAndCompletes() throws {
+        let context = try makeContext()
+        let payment = payment()
+        context.insert(payment)
+        let month = makeDate(2026, 10, 1)
+
+        _ = try PaymentPeriodService.recordPartial(
+            payment,
+            month: month,
+            amount: 20_000,
+            context: context,
+            periods: []
+        )
+        var periods = try context.fetch(FetchDescriptor<PaymentPeriod>())
+        XCTAssertEqual(periods.first?.status, .partial)
+        XCTAssertEqual(periods.first?.paidAmount, 20_000)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<ExpenseEntry>()), 1)
+
+        _ = try PaymentPeriodService.recordPartial(
+            payment,
+            month: month,
+            amount: 10_000,
+            context: context,
+            periods: periods
+        )
+        periods = try context.fetch(FetchDescriptor<PaymentPeriod>())
+        XCTAssertEqual(periods.first?.paidAmount, 30_000)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<ExpenseEntry>()), 1)
+
+        _ = try PaymentPeriodService.recordPartial(
+            payment,
+            month: month,
+            amount: 17_300,
+            context: context,
+            periods: periods
+        )
+        periods = try context.fetch(FetchDescriptor<PaymentPeriod>())
+        XCTAssertEqual(periods.first?.status, .paid)
+        XCTAssertEqual(periods.first?.paidAmount, 47_300)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<ExpenseEntry>()), 1)
+
+        let expenses = try context.fetch(FetchDescriptor<ExpenseEntry>())
+        XCTAssertEqual(expenses.first?.amount, 47_300)
+    }
+
     func testPaymentActiveWindow() {
         let payment = payment()
         payment.startDate = makeDate(2026, 10, 1)
