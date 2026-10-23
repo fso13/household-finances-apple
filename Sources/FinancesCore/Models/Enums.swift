@@ -142,6 +142,32 @@ package struct ExpenseCategory: RawRepresentable, Codable, Identifiable, Hashabl
     }
 }
 
+// MARK: - Статус платежа
+
+package enum PaymentStatus: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
+    case scheduled
+    case paid
+    case skipped
+
+    package var id: String { rawValue }
+
+    package var title: String {
+        switch self {
+        case .scheduled: "Запланирован"
+        case .paid: "Оплачен"
+        case .skipped: "Пропущен"
+        }
+    }
+
+    package var icon: String {
+        switch self {
+        case .scheduled: "clock"
+        case .paid: "checkmark.circle.fill"
+        case .skipped: "forward.fill"
+        }
+    }
+}
+
 // MARK: - Округление
 
 package enum RoundingRule: String, CaseIterable, Codable, Identifiable, Hashable {

@@ -13,6 +13,7 @@ final class UndoTests: XCTestCase {
             Subscription.self,
             Budget.self,
             SavingsGoal.self,
+            PaymentPeriod.self,
             configurations: configuration
         )
         let context = ModelContext(container)

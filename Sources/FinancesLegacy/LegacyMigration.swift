@@ -43,7 +43,7 @@ package enum LegacyMigration {
                 at: newURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            let schema = Schema(versionedSchema: FinancesSchemaV4.self)
+            let schema = Schema(versionedSchema: FinancesSchemaV5.self)
             let configuration = ModelConfiguration(
                 "FinancesV2",
                 schema: schema,

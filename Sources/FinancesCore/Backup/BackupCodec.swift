@@ -53,6 +53,9 @@ package enum BackupCodec {
             )
             let goals = try context.fetch(FetchDescriptor<SavingsGoal>(sortBy: [SortDescriptor(\.name)]))
             let customCategories = CustomCategoryCatalog.shared.categories
+            let periods = try context.fetch(
+                FetchDescriptor<PaymentPeriod>(sortBy: [SortDescriptor(\.periodStart), SortDescriptor(\.title)])
+            )
 
             return BackupEnvelope(
                 appVersion: appVersion,
@@ -64,7 +67,8 @@ package enum BackupCodec {
                     subscriptions: subscriptions.map(SubscriptionBackup.init),
                     budgets: budgets.map(BudgetBackup.init),
                     goals: goals.map(SavingsGoalBackup.init),
-                    customCategories: customCategories
+                    customCategories: customCategories,
+                    periods: periods.map(PaymentPeriodBackup.init)
                 )
             )
         } catch {
@@ -109,6 +113,7 @@ package enum BackupCodec {
         let existingSubscriptions = try context.fetch(FetchDescriptor<Subscription>())
         let existingBudgets = try context.fetch(FetchDescriptor<Budget>())
         let existingGoals = try context.fetch(FetchDescriptor<SavingsGoal>())
+        let existingPeriods = try context.fetch(FetchDescriptor<PaymentPeriod>())
 
         var incomeKeys = Set(existingIncomes.map { incomeKey($0) })
         var expenseKeys = Set(existingExpenses.map { expenseKey($0) })
@@ -116,6 +121,7 @@ package enum BackupCodec {
         var subscriptionKeys = Set(existingSubscriptions.map { subscriptionKey($0) })
         var budgetKeys = Set(existingBudgets.map { budgetKey($0) })
         var goalKeys = Set(existingGoals.map { $0.name })
+        var periodKeys = Set(existingPeriods.map { periodKey($0) })
 
         var summary = RestoreSummary(mode: mode)
 
@@ -163,21 +169,42 @@ package enum BackupCodec {
                 summary.skipped += 1
                 continue
             }
+            let payment = RecurringPayment(
+                title: item.title,
+                category: ExpenseCategory(rawValue: item.category) ?? .other,
+                baseAmount: item.baseAmount,
+                rounding: RoundingRule(rawValue: item.rounding) ?? .none,
+                roundingStep: item.roundingStep,
+                frequency: PaymentFrequency(rawValue: item.frequency) ?? .monthly,
+                dayOfMonth: item.dayOfMonth,
+                startDate: item.startDate,
+                isActive: item.isActive,
+                note: item.note
+            )
+            context.insert(payment)
+            recurringKeys.insert(key)
+            summary.inserted += 1
+        }
+
+        for item in envelope.data.periods ?? [] {
+            let key = "\(item.recurringKey)|\(item.periodStart.timeIntervalSince1970)"
+            guard mode == .replace || !periodKeys.contains(key) else {
+                summary.skipped += 1
+                continue
+            }
             context.insert(
-                RecurringPayment(
+                PaymentPeriod(
+                    recurringKey: item.recurringKey,
+                    periodStart: item.periodStart,
+                    status: PaymentStatus(rawValue: item.status) ?? .scheduled,
+                    plannedAmount: item.plannedAmount,
+                    paidAmount: item.paidAmount,
+                    paidDate: item.paidDate,
                     title: item.title,
-                    category: ExpenseCategory(rawValue: item.category) ?? .other,
-                    baseAmount: item.baseAmount,
-                    rounding: RoundingRule(rawValue: item.rounding) ?? .none,
-                    roundingStep: item.roundingStep,
-                    frequency: PaymentFrequency(rawValue: item.frequency) ?? .monthly,
-                    dayOfMonth: item.dayOfMonth,
-                    startDate: item.startDate,
-                    isActive: item.isActive,
                     note: item.note
                 )
             )
-            recurringKeys.insert(key)
+            periodKeys.insert(key)
             summary.inserted += 1
         }
 
@@ -261,6 +288,10 @@ package enum BackupCodec {
 
     private static func subscriptionKey(_ subscription: Subscription) -> String {
         "\(subscription.name)|\(subscription.amount)|\(subscription.cycle.rawValue)"
+    }
+
+    private static func periodKey(_ period: PaymentPeriod) -> String {
+        "\(period.recurringKey)|\(period.periodStart.timeIntervalSince1970)"
     }
 
     private static func budgetKey(_ budget: Budget) -> String {

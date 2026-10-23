@@ -166,6 +166,11 @@ package final class RecurringPayment {
         monthlyCost * 12
     }
 
+    /// Стабильный ключ для истории периодов и бэкапов.
+    package var recurringKey: String {
+        "\(categoryRaw)|\(startDate.timeIntervalSince1970)"
+    }
+
     package var nextPaymentDate: Date {
         nextPaymentDate(relativeTo: Date())
     }

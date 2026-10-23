@@ -40,6 +40,7 @@ package struct BackupData: Codable, Sendable {
     package var budgets: [BudgetBackup]?
     package var goals: [SavingsGoalBackup]?
     package var customCategories: [CustomExpenseCategory]?
+    package var periods: [PaymentPeriodBackup]?
 
     package init(
         incomes: [IncomeBackup] = [],
@@ -48,7 +49,8 @@ package struct BackupData: Codable, Sendable {
         subscriptions: [SubscriptionBackup] = [],
         budgets: [BudgetBackup]? = [],
         goals: [SavingsGoalBackup]? = [],
-        customCategories: [CustomExpenseCategory]? = []
+        customCategories: [CustomExpenseCategory]? = [],
+        periods: [PaymentPeriodBackup]? = []
     ) {
         self.incomes = incomes
         self.expenses = expenses
@@ -57,11 +59,12 @@ package struct BackupData: Codable, Sendable {
         self.budgets = budgets
         self.goals = goals
         self.customCategories = customCategories
+        self.periods = periods
     }
 
     package var totalCount: Int {
         incomes.count + expenses.count + recurring.count + subscriptions.count + (budgets?.count ?? 0)
-            + (goals?.count ?? 0)
+            + (goals?.count ?? 0) + (periods?.count ?? 0)
     }
 }
 
@@ -133,6 +136,28 @@ package struct RecurringBackup: Codable, Sendable {
         startDate = payment.startDate
         isActive = payment.isActive
         note = payment.note
+    }
+}
+
+package struct PaymentPeriodBackup: Codable, Sendable {
+    package var recurringKey: String
+    package var periodStart: Date
+    package var status: String
+    package var plannedAmount: Double
+    package var paidAmount: Double
+    package var paidDate: Date?
+    package var title: String
+    package var note: String
+
+    package init(_ period: PaymentPeriod) {
+        recurringKey = period.recurringKey
+        periodStart = period.periodStart
+        status = period.status.rawValue
+        plannedAmount = period.plannedAmount
+        paidAmount = period.paidAmount
+        paidDate = period.paidDate
+        title = period.title
+        note = period.note
     }
 }
 

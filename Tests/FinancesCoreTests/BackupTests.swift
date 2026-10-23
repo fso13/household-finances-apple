@@ -13,6 +13,7 @@ final class BackupTests: XCTestCase {
             Subscription.self,
             Budget.self,
             SavingsGoal.self,
+            PaymentPeriod.self,
             configurations: configuration
         )
         return ModelContext(container)
@@ -52,6 +53,20 @@ final class BackupTests: XCTestCase {
                 ],
                 customCategories: [
                     CustomExpenseCategory(name: "Спорт", icon: "figure.run", tint: .orange)
+                ],
+                periods: [
+                    PaymentPeriodBackup(
+                        PaymentPeriod(
+                            payment: RecurringPayment(
+                                title: "Аренда",
+                                category: .rent,
+                                baseAmount: 47_250
+                            ),
+                            periodStart: makeDate(2026, 10, 1),
+                            status: .paid,
+                            paidDate: makeDate(2026, 10, 5)
+                        )
+                    )
                 ]
             )
         )
@@ -71,6 +86,7 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(decoded.data.budgets?.first?.limit, 30_000)
         XCTAssertEqual(decoded.data.goals?.first?.name, "Отпуск")
         XCTAssertEqual(decoded.data.customCategories?.first?.name, "Спорт")
+        XCTAssertEqual(decoded.data.periods?.first?.status, "paid")
     }
 
     func testDecodeRejectsUnknownFormat() throws {
@@ -93,13 +109,14 @@ final class BackupTests: XCTestCase {
                 .appendingPathComponent("finances-backup-tests-\(UUID().uuidString)")
         )
 
-        XCTAssertEqual(summary.inserted, 6)
+        XCTAssertEqual(summary.inserted, 7)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<IncomeEntry>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<ExpenseEntry>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<RecurringPayment>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<Subscription>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<Budget>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<SavingsGoal>()), 1)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<PaymentPeriod>()), 1)
         XCTAssertEqual(CustomCategoryCatalog.shared.categories.count, 1)
     }
 
@@ -119,9 +136,9 @@ final class BackupTests: XCTestCase {
             automaticBackupFolder: FileManager.default.temporaryDirectory
         )
 
-        XCTAssertEqual(first.inserted, 6)
+        XCTAssertEqual(first.inserted, 7)
         XCTAssertEqual(second.inserted, 0)
-        XCTAssertEqual(second.skipped, 6)
+        XCTAssertEqual(second.skipped, 7)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<IncomeEntry>()), 1)
     }
 

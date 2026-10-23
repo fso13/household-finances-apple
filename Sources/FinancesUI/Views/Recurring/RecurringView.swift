@@ -7,6 +7,8 @@ struct RecurringView: View {
 
     @Query(sort: \RecurringPayment.title) private var payments: [RecurringPayment]
     @Query(sort: \ExpenseEntry.date, order: .reverse) private var expenses: [ExpenseEntry]
+    @Query private var periods: [PaymentPeriod]
+    @Query(sort: \Subscription.name) private var subscriptions: [Subscription]
 
     @State private var editor: EditorContext?
     @State private var pendingDelete: RecurringPayment?
@@ -36,11 +38,22 @@ struct RecurringView: View {
         Stats.roundingAdjustment(payments)
     }
 
+    private var upcoming: [UpcomingPayment] {
+        PaymentCalendarService.upcoming(
+            payments: payments,
+            subscriptions: subscriptions,
+            periods: periods,
+            expenses: expenses,
+            month: Date().startOfMonth
+        )
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 summary
                 roundingHint
+                calendarCard
 
                 if payments.isEmpty {
                     CardView {
@@ -65,6 +78,7 @@ struct RecurringView: View {
                             RecurringCard(
                                 payment: payment,
                                 expenses: expenses,
+                                periods: periods,
                                 onEdit: { editor = EditorContext(payment: payment) },
                                 onDelete: { pendingDelete = payment }
                             )
@@ -150,6 +164,74 @@ struct RecurringView: View {
         }
     }
 
+    private var calendarCard: some View {
+        CardView {
+            VStack(alignment: .leading, spacing: 10) {
+                SectionHeader(
+                    title: "Календарь платежей",
+                    subtitle: MonthFormat.monthTitle(Date().startOfMonth),
+                    icon: "calendar",
+                    tint: .teal
+                )
+
+                if upcoming.isEmpty {
+                    Text("На этот месяц запланированных платежей нет.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 6)
+                } else {
+                    ForEach(upcoming.prefix(6)) { item in
+                        HStack(spacing: 12) {
+                            VStack(spacing: 0) {
+                                Text("\(item.date.day)")
+                                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                                    .monospacedDigit()
+                                Text(MonthFormat.shortMonth(item.date))
+                                    .font(.system(size: 8, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(width: 34, height: 34)
+                            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.title)
+                                    .font(.callout.weight(.medium))
+                                    .lineLimit(1)
+                                Text(item.category.title)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Text(Fmt.money(item.amount))
+                                .font(.callout.weight(.semibold))
+                                .monospacedDigit()
+
+                            calendarBadge(item)
+                        }
+                        if item.id != upcoming.prefix(6).last?.id {
+                            Divider().padding(.leading, 46)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func calendarBadge(_ item: UpcomingPayment) -> some View {
+        if item.status == .paid {
+            return AnyView(TagBadge(text: "оплачен", color: .green, icon: "checkmark"))
+        }
+        if item.status == .skipped {
+            return AnyView(TagBadge(text: "пропущен", color: .gray, icon: "forward.fill"))
+        }
+        if item.isOverdue {
+            return AnyView(TagBadge(text: "просрочен", color: .red, icon: "exclamationmark"))
+        }
+        return AnyView(TagBadge(text: "ожидает", color: .blue, icon: "clock"))
+    }
+
     private var roundingHint: some View {
         CardView(padding: 12) {
             HStack(alignment: .top, spacing: 10) {
@@ -176,11 +258,44 @@ private struct RecurringCard: View {
     @Environment(\.modelContext) private var context
     @Bindable var payment: RecurringPayment
     let expenses: [ExpenseEntry]
+    let periods: [PaymentPeriod]
     let onEdit: () -> Void
     let onDelete: () -> Void
 
-    private var isRecorded: Bool {
-        PaymentRecorder.isRecorded(payment, expenses: expenses, in: .now)
+    private var month: Date { Date().startOfMonth }
+
+    private var status: PaymentStatus {
+        PaymentPeriodService.status(
+            for: payment,
+            month: month,
+            periods: periods,
+            expenses: expenses
+        )
+    }
+
+    private var currentPeriod: PaymentPeriod? {
+        PaymentPeriodService.period(for: payment, month: month, periods: periods)
+    }
+
+    private var isOverdue: Bool {
+        PaymentPeriodService.isOverdue(
+            payment,
+            month: month,
+            periods: periods,
+            expenses: expenses
+        )
+    }
+
+    private var statusBadge: some View {
+        if status == .paid {
+            TagBadge(text: "оплачено", color: .green, icon: "checkmark")
+        } else if status == .skipped {
+            TagBadge(text: "пропущен", color: .gray, icon: "forward.fill")
+        } else if isOverdue {
+            TagBadge(text: "просрочен", color: .red, icon: "exclamationmark")
+        } else {
+            TagBadge(text: "запланирован", color: .blue, icon: "clock")
+        }
     }
 
     var body: some View {
@@ -221,8 +336,8 @@ private struct RecurringCard: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    if isRecorded, payment.isActive {
-                        TagBadge(text: "оплачено", color: .green, icon: "checkmark")
+                    if payment.isActive {
+                        statusBadge
                     }
                 }
 
@@ -282,22 +397,65 @@ private struct RecurringCard: View {
                 Divider()
 
                 HStack(spacing: 8) {
-                    Button {
-                        do {
-                            try PaymentRecorder.record(payment, context: context)
-                        } catch {
-                            ErrorCenter.shared.report(error)
+                    if status == .skipped, let currentPeriod {
+                        Button {
+                            do {
+                                try PaymentPeriodService.unskip(currentPeriod, context: context)
+                            } catch {
+                                ErrorCenter.shared.report(error)
+                            }
+                        } label: {
+                            Label("Вернуть в план", systemImage: "arrow.uturn.backward")
+                                .font(.caption)
                         }
-                    } label: {
-                        Label(
-                            isRecorded ? "Оплачено" : "Записать оплату",
-                            systemImage: isRecorded ? "checkmark.circle.fill" : "plus.circle"
-                        )
-                        .font(.caption)
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    } else {
+                        Button {
+                            do {
+                                try PaymentPeriodService.markPaid(
+                                    payment,
+                                    month: month,
+                                    context: context,
+                                    periods: periods
+                                )
+                            } catch {
+                                ErrorCenter.shared.report(error)
+                            }
+                        } label: {
+                            Label(
+                                status == .paid ? "Оплачено" : "Записать оплату",
+                                systemImage: status == .paid ? "checkmark.circle.fill" : "plus.circle"
+                            )
+                            .font(.caption)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .disabled(!payment.isActive || status == .paid)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(!payment.isActive || isRecorded)
+
+                    if status == .scheduled && payment.isActive {
+                        Menu {
+                            Button("Пропустить месяц", systemImage: "forward.fill") {
+                                do {
+                                    try PaymentPeriodService.skip(
+                                        payment,
+                                        month: month,
+                                        context: context,
+                                        periods: periods
+                                    )
+                                } catch {
+                                    ErrorCenter.shared.report(error)
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                        .menuStyle(.borderlessButton)
+                        .menuIndicator(.hidden)
+                        .fixedSize()
+                        .help("Ещё")
+                    }
 
                     Spacer()
 
