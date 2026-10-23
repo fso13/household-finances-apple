@@ -101,6 +101,8 @@ package struct RootView: View {
             ExpensesView()
         case .budgets:
             BudgetsView()
+        case .goals:
+            GoalsView()
         case .recurring:
             RecurringView()
         case .subscriptions:
@@ -128,6 +130,7 @@ struct SidebarView: View {
                 row(.income)
                 row(.expenses)
                 row(.budgets)
+                row(.goals)
                 row(.recurring)
                 row(.subscriptions)
             }

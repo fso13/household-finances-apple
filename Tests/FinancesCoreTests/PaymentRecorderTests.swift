@@ -12,6 +12,7 @@ final class PaymentRecorderTests: XCTestCase {
             RecurringPayment.self,
             Subscription.self,
             Budget.self,
+            SavingsGoal.self,
             configurations: configuration
         )
         return ModelContext(container)

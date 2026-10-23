@@ -38,23 +38,27 @@ package struct BackupData: Codable, Sendable {
     package var recurring: [RecurringBackup]
     package var subscriptions: [SubscriptionBackup]
     package var budgets: [BudgetBackup]?
+    package var goals: [SavingsGoalBackup]?
 
     package init(
         incomes: [IncomeBackup] = [],
         expenses: [ExpenseBackup] = [],
         recurring: [RecurringBackup] = [],
         subscriptions: [SubscriptionBackup] = [],
-        budgets: [BudgetBackup]? = []
+        budgets: [BudgetBackup]? = [],
+        goals: [SavingsGoalBackup]? = []
     ) {
         self.incomes = incomes
         self.expenses = expenses
         self.recurring = recurring
         self.subscriptions = subscriptions
         self.budgets = budgets
+        self.goals = goals
     }
 
     package var totalCount: Int {
         incomes.count + expenses.count + recurring.count + subscriptions.count + (budgets?.count ?? 0)
+            + (goals?.count ?? 0)
     }
 }
 
@@ -150,6 +154,33 @@ package struct BudgetBackup: Codable, Sendable {
         self.month = month
         self.limit = limit
         self.note = note
+    }
+}
+
+package struct SavingsGoalBackup: Codable, Sendable {
+    package var name: String
+    package var target: Double
+    package var saved: Double
+    package var deadline: Date?
+    package var note: String
+    package var isActive: Bool
+
+    package init(_ goal: SavingsGoal) {
+        name = goal.name
+        target = goal.target
+        saved = goal.saved
+        deadline = goal.deadline
+        note = goal.note
+        isActive = goal.isActive
+    }
+
+    package init(name: String, target: Double, saved: Double, deadline: Date?, note: String, isActive: Bool) {
+        self.name = name
+        self.target = target
+        self.saved = saved
+        self.deadline = deadline
+        self.note = note
+        self.isActive = isActive
     }
 }
 

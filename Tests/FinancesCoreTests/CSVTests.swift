@@ -59,6 +59,7 @@ final class CSVTests: XCTestCase {
             RecurringPayment.self,
             Subscription.self,
             Budget.self,
+            SavingsGoal.self,
             configurations: configuration
         )
         let context = ModelContext(container)

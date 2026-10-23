@@ -51,6 +51,7 @@ package enum BackupCodec {
             let budgets = try context.fetch(
                 FetchDescriptor<Budget>(sortBy: [SortDescriptor(\.year), SortDescriptor(\.month)])
             )
+            let goals = try context.fetch(FetchDescriptor<SavingsGoal>(sortBy: [SortDescriptor(\.name)]))
 
             return BackupEnvelope(
                 appVersion: appVersion,
@@ -60,7 +61,8 @@ package enum BackupCodec {
                     expenses: expenses.map(ExpenseBackup.init),
                     recurring: recurring.map(RecurringBackup.init),
                     subscriptions: subscriptions.map(SubscriptionBackup.init),
-                    budgets: budgets.map(BudgetBackup.init)
+                    budgets: budgets.map(BudgetBackup.init),
+                    goals: goals.map(SavingsGoalBackup.init)
                 )
             )
         } catch {
@@ -96,12 +98,14 @@ package enum BackupCodec {
         let existingRecurring = try context.fetch(FetchDescriptor<RecurringPayment>())
         let existingSubscriptions = try context.fetch(FetchDescriptor<Subscription>())
         let existingBudgets = try context.fetch(FetchDescriptor<Budget>())
+        let existingGoals = try context.fetch(FetchDescriptor<SavingsGoal>())
 
         var incomeKeys = Set(existingIncomes.map { incomeKey($0) })
         var expenseKeys = Set(existingExpenses.map { expenseKey($0) })
         var recurringKeys = Set(existingRecurring.map { recurringKey($0) })
         var subscriptionKeys = Set(existingSubscriptions.map { subscriptionKey($0) })
         var budgetKeys = Set(existingBudgets.map { budgetKey($0) })
+        var goalKeys = Set(existingGoals.map { $0.name })
 
         var summary = RestoreSummary(mode: mode)
 
@@ -205,6 +209,25 @@ package enum BackupCodec {
                 )
             )
             budgetKeys.insert(key)
+            summary.inserted += 1
+        }
+
+        for item in envelope.data.goals ?? [] {
+            guard mode == .replace || !goalKeys.contains(item.name) else {
+                summary.skipped += 1
+                continue
+            }
+            context.insert(
+                SavingsGoal(
+                    name: item.name,
+                    target: item.target,
+                    saved: item.saved,
+                    deadline: item.deadline,
+                    note: item.note,
+                    isActive: item.isActive
+                )
+            )
+            goalKeys.insert(item.name)
             summary.inserted += 1
         }
 

@@ -306,6 +306,25 @@ package enum DemoData {
             )
         }
 
+        context.insert(
+            SavingsGoal(
+                name: "Финансовая подушка",
+                target: 500_000,
+                saved: 180_000,
+                deadline: now.addingMonths(12),
+                note: "Шесть месяцев расходов"
+            )
+        )
+        context.insert(
+            SavingsGoal(
+                name: "Отпуск",
+                target: 150_000,
+                saved: 45_000,
+                deadline: now.addingMonths(6),
+                note: ""
+            )
+        )
+
         try Persistence.save(context, operation: "demo.seed")
     }
 
@@ -315,6 +334,7 @@ package enum DemoData {
         try deleteAll(RecurringPayment.self, context: context)
         try deleteAll(Subscription.self, context: context)
         try deleteAll(Budget.self, context: context)
+        try deleteAll(SavingsGoal.self, context: context)
         try Persistence.save(context, operation: "demo.clear")
     }
 

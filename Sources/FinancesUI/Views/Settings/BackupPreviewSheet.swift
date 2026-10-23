@@ -36,6 +36,7 @@ struct BackupPreviewSheet: View {
                     backupRow("Регулярные платежи", envelope.data.recurring.count)
                     backupRow("Подписки", envelope.data.subscriptions.count)
                     backupRow("Бюджеты", envelope.data.budgets?.count ?? 0)
+                    backupRow("Цели", envelope.data.goals?.count ?? 0)
                     HStack {
                         Text("Версия")
                             .foregroundStyle(.secondary)
