@@ -12,6 +12,7 @@ struct AnalyticsView: View {
     @State private var selectedTypes: Set<IncomeType> = []
     @State private var selectedCategories: Set<ExpenseCategory> = []
     @State private var search = ""
+    @State private var comparisonMonth: Date = Date().startOfMonth
 
     // MARK: - Данные и фильтры
 
@@ -114,6 +115,29 @@ struct AnalyticsView: View {
         Stats.quarterTotals(incomes: filteredIncomes, expenses: filteredExpenses)
     }
 
+    private var comparisonChanges: [CategoryChange] {
+        ComparisonService.categoryChanges(
+            expenses: expenses,
+            currentMonth: comparisonMonth
+        )
+    }
+
+    private var comparisonCurrent: PeriodTotals {
+        ComparisonService.totals(
+            incomes: incomes,
+            expenses: expenses,
+            in: comparisonMonth
+        )
+    }
+
+    private var comparisonPrevious: PeriodTotals {
+        ComparisonService.totals(
+            incomes: incomes,
+            expenses: expenses,
+            in: comparisonMonth.addingMonths(-1)
+        )
+    }
+
     private var monthStride: Int {
         chartMonths.count > 18 ? 4 : (chartMonths.count > 10 ? 2 : 1)
     }
@@ -177,6 +201,7 @@ struct AnalyticsView: View {
                     }
                 } else {
                     kpiRow
+                    comparisonCard
                     dynamicsCard
 
                     HStack(alignment: .top, spacing: 16) {
@@ -383,6 +408,101 @@ struct AnalyticsView: View {
     }
 
     // MARK: - Динамика
+
+    private var comparisonCard: some View {
+        CardView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top) {
+                    SectionHeader(
+                        title: "Изменения к прошлому месяцу",
+                        subtitle:
+                            "\(MonthFormat.monthTitle(comparisonMonth)) к \(MonthFormat.monthTitle(comparisonMonth.addingMonths(-1)))",
+                        icon: "arrow.left.arrow.right",
+                        tint: .indigo
+                    )
+                    Spacer()
+                    MonthNavigator(month: $comparisonMonth)
+                }
+
+                HStack(spacing: 12) {
+                    comparisonMetric(
+                        "Расходы сейчас",
+                        Fmt.moneyRounded(comparisonCurrent.expense),
+                        color: .orange
+                    )
+                    comparisonMetric(
+                        "Расходы раньше",
+                        Fmt.moneyRounded(comparisonPrevious.expense),
+                        color: .secondary
+                    )
+                    comparisonMetric(
+                        "Разница",
+                        Fmt.signedMoney(comparisonCurrent.expense - comparisonPrevious.expense),
+                        color: comparisonCurrent.expense > comparisonPrevious.expense ? .red : .green
+                    )
+                    comparisonMetric(
+                        "Норма сбережений",
+                        Fmt.percent(comparisonCurrent.savingsRate),
+                        color: comparisonCurrent.savingsRate >= 0 ? .teal : .red
+                    )
+                }
+
+                if comparisonChanges.isEmpty {
+                    Text("За два месяца нет расходов для сравнения.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 4)
+                } else {
+                    ForEach(comparisonChanges.prefix(4)) { change in
+                        HStack(spacing: 10) {
+                            IconTile(
+                                symbol: change.category.icon,
+                                tint: change.category.color,
+                                size: 28
+                            )
+                            Text(change.category.title)
+                                .font(.callout)
+                            Spacer()
+                            Text("\(Fmt.moneyRounded(change.previous)) → \(Fmt.moneyRounded(change.current))")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                            TagBadge(
+                                text: change.isGrowth
+                                    ? "+\(Fmt.moneyRounded(change.delta))"
+                                    : Fmt.signedMoney(change.delta),
+                                color: change.isGrowth ? .red : .green,
+                                icon: change.isGrowth ? "arrow.up.right" : "arrow.down.right"
+                            )
+                            if let fraction = change.fraction {
+                                Text(Fmt.percent(abs(fraction)))
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                                    .monospacedDigit()
+                                    .frame(width: 48, alignment: .trailing)
+                            }
+                        }
+                        if change.id != comparisonChanges.prefix(4).last?.id {
+                            Divider().padding(.leading, 38)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func comparisonMetric(_ title: String, _ value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(color)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
     private var dynamicsCard: some View {
         CardView {
