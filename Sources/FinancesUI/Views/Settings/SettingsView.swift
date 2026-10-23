@@ -12,10 +12,20 @@ struct SettingsView: View {
 
     @State private var confirmLoadDemo = false
     @State private var confirmClear = false
-    @State private var importedBackup: BackupEnvelope?
-    @State private var importSummary: RestoreSummary?
-    @State private var csvPreview: CSVImportPreview?
-    @State private var csvSummary: CSVImportSummary?
+    @State private var activeSheet: SettingsSheet?
+    @State private var resultMessage: String?
+
+    private enum SettingsSheet: Identifiable {
+        case backup(BackupEnvelope)
+        case csv(CSVImportPreview)
+
+        var id: String {
+            switch self {
+            case .backup(let envelope): "backup-\(envelope.createdAt.timeIntervalSince1970)"
+            case .csv(let preview): "csv-\(preview.id.uuidString)"
+            }
+        }
+    }
 
     private var marketingVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -151,7 +161,7 @@ struct SettingsView: View {
                 ) {
                     do {
                         if let envelope = try BackupExporter.chooseBackup() {
-                            importedBackup = envelope
+                            activeSheet = .backup(envelope)
                         }
                     } catch {
                         ErrorCenter.shared.report(error)
@@ -214,7 +224,7 @@ struct SettingsView: View {
                 ) {
                     do {
                         if let preview = try Exporter.chooseCSV() {
-                            csvPreview = preview
+                            activeSheet = .csv(preview)
                         }
                     } catch {
                         ErrorCenter.shared.report(error)

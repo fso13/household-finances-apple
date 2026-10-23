@@ -25,7 +25,7 @@ enum Exporter {
         }
 
         var rows: [[String]] = [
-            ["Раздел", "Дата", "Тип / категория", "Сумма", "Примечание"]
+            ["Раздел", "Дата", "Тип / категория", "Сумма", "Работодатель", "Примечание"]
         ]
 
         for income in incomes {
@@ -34,7 +34,8 @@ enum Exporter {
                 CSVCodec.machineDate(income.date),
                 income.type.title,
                 CSVCodec.machineNumber(income.amount),
-                [income.employer, income.note].filter { !$0.isEmpty }.joined(separator: " — "),
+                income.employer,
+                income.note,
             ])
         }
 
@@ -44,6 +45,7 @@ enum Exporter {
                 CSVCodec.machineDate(expense.date),
                 expense.category.title,
                 CSVCodec.machineNumber(expense.amount),
+                "",
                 expense.note,
             ])
         }
@@ -54,6 +56,7 @@ enum Exporter {
                 CSVCodec.machineDate(payment.startDate),
                 payment.category.title,
                 CSVCodec.machineNumber(payment.payableAmount),
+                "",
                 [
                     payment.title,
                     payment.frequency.title,
@@ -69,6 +72,7 @@ enum Exporter {
                 CSVCodec.machineDate(subscription.startDate),
                 "Подписки",
                 CSVCodec.machineNumber(subscription.amount),
+                "",
                 [
                     subscription.name,
                     subscription.cycle.title,
