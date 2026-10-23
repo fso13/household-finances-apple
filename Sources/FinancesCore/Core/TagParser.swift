@@ -37,7 +37,8 @@ package enum TagParser {
                 counts[tag, default: 0] += 1
             }
         }
-        return counts
+        return
+            counts
             .map { TagCount(tag: $0.key, count: $0.value) }
             .sorted {
                 $0.count == $1.count

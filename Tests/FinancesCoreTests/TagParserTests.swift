@@ -21,7 +21,7 @@ final class TagParserTests: XCTestCase {
             IncomeEntry(amount: 200, note: "#работа #отпуск"),
         ]
         let expenses = [
-            ExpenseEntry(amount: 50, note: "#отпуск"),
+            ExpenseEntry(amount: 50, note: "#отпуск")
         ]
         let counts = TagParser.counts(incomes: incomes, expenses: expenses)
         XCTAssertEqual(counts.first?.tag, "отпуск")
