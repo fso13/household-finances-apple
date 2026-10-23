@@ -90,6 +90,12 @@ struct BudgetsView: View {
             .padding(20)
         }
         .navigationTitle("Бюджеты")
+        .onAppear {
+            BudgetNotificationService.notifyIfNeeded(progress: progress, month: month)
+        }
+        .onChange(of: notificationSignature) { _, _ in
+            BudgetNotificationService.notifyIfNeeded(progress: progress, month: month)
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -209,6 +215,10 @@ struct BudgetsView: View {
         }
         return
             "средний расход \(Fmt.moneyRounded(forecast.averageDailyExpense)) в день · прошло \(forecast.daysElapsed) из \(forecast.daysInMonth) дней"
+    }
+
+    private var notificationSignature: String {
+        progress.map { "\($0.id):\($0.spent)" }.joined(separator: "|")
     }
 
     private var unbudgetedCategoriesCount: Int {

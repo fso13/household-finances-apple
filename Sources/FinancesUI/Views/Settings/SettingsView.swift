@@ -10,6 +10,7 @@ struct SettingsView: View {
     @Query private var recurring: [RecurringPayment]
     @Query private var subscriptions: [Subscription]
 
+    @AppStorage("budgetNotificationsEnabled") private var budgetNotificationsEnabled = true
     @State private var confirmLoadDemo = false
     @State private var confirmClear = false
     @State private var activeSheet: SettingsSheet?
@@ -40,6 +41,7 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 dataCard
+                notificationsCard
                 backupCard
                 exportCard
                 aboutCard
@@ -122,6 +124,32 @@ struct SettingsView: View {
                 ) {
                     confirmClear = true
                 }
+            }
+        }
+    }
+
+    private var notificationsCard: some View {
+        CardView {
+            VStack(alignment: .leading, spacing: 14) {
+                SectionHeader(
+                    title: "Уведомления",
+                    subtitle: "локальные, без сети",
+                    icon: "bell.fill",
+                    tint: .orange
+                )
+
+                Toggle("Предупреждать о превышении бюджета", isOn: $budgetNotificationsEnabled)
+                    .onChange(of: budgetNotificationsEnabled) { _, enabled in
+                        if enabled {
+                            BudgetNotificationService.requestAuthorization()
+                        }
+                    }
+
+                Text(
+                    "Уведомление приходит один раз для каждой категории и месяца. Разрешение запрашивается при первом превышении."
+                )
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
             }
         }
     }

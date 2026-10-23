@@ -87,6 +87,10 @@ struct DashboardView: View {
         BudgetService.progress(budgets: budgets, expenses: expenses, month: month)
     }
 
+    private var budgetSignature: String {
+        budgetProgress.map { "\($0.id):\($0.spent)" }.joined(separator: "|")
+    }
+
     private var balanceForecast: BalanceForecast {
         ForecastService.balance(
             incomes: incomes,
@@ -151,6 +155,12 @@ struct DashboardView: View {
             .padding(20)
         }
         .navigationTitle("Обзор")
+        .onAppear {
+            BudgetNotificationService.notifyIfNeeded(progress: budgetProgress, month: month)
+        }
+        .onChange(of: budgetSignature) { _, _ in
+            BudgetNotificationService.notifyIfNeeded(progress: budgetProgress, month: month)
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
