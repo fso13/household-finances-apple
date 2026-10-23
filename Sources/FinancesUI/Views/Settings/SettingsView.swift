@@ -15,6 +15,8 @@ struct SettingsView: View {
     @State private var confirmClear = false
     @State private var activeSheet: SettingsSheet?
     @State private var resultMessage: String?
+    @State private var showCategories = false
+    @State private var customCategoryCount = CustomCategoryCatalog.shared.categories.count
 
     private enum SettingsSheet: Identifiable {
         case backup(BackupEnvelope)
@@ -41,6 +43,7 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 dataCard
+                categoriesCard
                 notificationsCard
                 backupCard
                 exportCard
@@ -125,6 +128,44 @@ struct SettingsView: View {
                     confirmClear = true
                 }
             }
+        }
+    }
+
+    private var categoriesCard: some View {
+        CardView {
+            VStack(alignment: .leading, spacing: 14) {
+                SectionHeader(
+                    title: "Категории",
+                    subtitle: "встроенные и пользовательские",
+                    icon: "tag.fill",
+                    tint: .pink
+                )
+
+                HStack(spacing: 12) {
+                    IconTile(symbol: "tag.fill", tint: .pink, size: 34)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Пользовательские категории")
+                            .font(.callout.weight(.medium))
+                        Text("\(customCategoryCount) добавлено · появятся в расходах и бюджетах")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Управлять") {
+                        showCategories = true
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            }
+        }
+        .sheet(
+            isPresented: $showCategories,
+            onDismiss: {
+                customCategoryCount = CustomCategoryCatalog.shared.categories.count
+            }
+        ) {
+            CategoriesSettingsView()
         }
     }
 

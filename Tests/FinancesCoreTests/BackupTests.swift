@@ -49,6 +49,9 @@ final class BackupTests: XCTestCase {
                 goals: [
                     SavingsGoalBackup(
                         name: "Отпуск", target: 150_000, saved: 45_000, deadline: nil, note: "", isActive: true)
+                ],
+                customCategories: [
+                    CustomExpenseCategory(name: "Спорт", icon: "figure.run", tint: .orange)
                 ]
             )
         )
@@ -67,6 +70,7 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(decoded.data.subscriptions.first?.name, "Музыка")
         XCTAssertEqual(decoded.data.budgets?.first?.limit, 30_000)
         XCTAssertEqual(decoded.data.goals?.first?.name, "Отпуск")
+        XCTAssertEqual(decoded.data.customCategories?.first?.name, "Спорт")
     }
 
     func testDecodeRejectsUnknownFormat() throws {
@@ -96,6 +100,7 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<Subscription>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<Budget>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<SavingsGoal>()), 1)
+        XCTAssertEqual(CustomCategoryCatalog.shared.categories.count, 1)
     }
 
     func testRestoreMergeSkipsDuplicates() throws {

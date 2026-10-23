@@ -60,7 +60,7 @@ struct RecurringEditorSheet: View {
                     TextField("Название", text: $draft.title, prompt: Text("Например, аренда квартиры"))
 
                     Picker("Категория", selection: $draft.category) {
-                        ForEach(ExpenseCategory.allCases) { category in
+                        ForEach(ExpenseCategory.all) { category in
                             Label(category.title, systemImage: category.icon).tag(category)
                         }
                     }

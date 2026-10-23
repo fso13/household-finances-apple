@@ -196,7 +196,7 @@ struct ExpensesView: View {
                 selectedCategories.removeAll()
             }
             Divider()
-            ForEach(ExpenseCategory.allCases) { category in
+            ForEach(ExpenseCategory.all) { category in
                 Toggle(
                     isOn: Binding(
                         get: { selectedCategories.contains(category) },

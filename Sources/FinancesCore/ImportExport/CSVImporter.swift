@@ -234,7 +234,7 @@ package extension ExpenseCategory {
     init?(title: String) {
         let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !normalized.isEmpty else { return nil }
-        if let exact = ExpenseCategory.allCases.first(where: {
+        if let exact = ExpenseCategory.all.first(where: {
             $0.title.lowercased() == normalized || $0.rawValue == normalized
         }) {
             self = exact

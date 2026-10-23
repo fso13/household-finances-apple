@@ -47,7 +47,7 @@ struct ExpenseEditorSheet: View {
                     .monospacedDigit()
 
                     Picker("Категория", selection: $draft.category) {
-                        ForEach(ExpenseCategory.allCases) { category in
+                        ForEach(ExpenseCategory.all) { category in
                             Label(category.title, systemImage: category.icon).tag(category)
                         }
                     }

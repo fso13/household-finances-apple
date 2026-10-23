@@ -1,3 +1,5 @@
+import Foundation
+
 // MARK: - Типы доходов
 
 package enum IncomeType: String, CaseIterable, Codable, Identifiable, Hashable {
@@ -41,55 +43,101 @@ package enum IncomeType: String, CaseIterable, Codable, Identifiable, Hashable {
 
 // MARK: - Категории расходов
 
-package enum ExpenseCategory: String, CaseIterable, Codable, Identifiable, Hashable {
-    case rent
-    case garage
-    case utilities
-    case subscriptions
-    case internet
-    case transport
-    case food
-    case health
-    case entertainment
-    case other
+/// Категория — строка, чтобы поддерживать пользовательские категории.
+/// Встроенные значения остаются прежними (`rent`, `food`, …).
+package struct ExpenseCategory: RawRepresentable, Codable, Identifiable, Hashable, Sendable {
+    package let rawValue: String
+
+    package init?(rawValue: String) {
+        guard !rawValue.isEmpty else { return nil }
+        self.rawValue = rawValue
+    }
+
+    private init(_ rawValue: String) {
+        self.rawValue = rawValue
+    }
 
     package var id: String { rawValue }
 
+    package static let rent = ExpenseCategory("rent")
+    package static let garage = ExpenseCategory("garage")
+    package static let utilities = ExpenseCategory("utilities")
+    package static let subscriptions = ExpenseCategory("subscriptions")
+    package static let internet = ExpenseCategory("internet")
+    package static let transport = ExpenseCategory("transport")
+    package static let food = ExpenseCategory("food")
+    package static let health = ExpenseCategory("health")
+    package static let entertainment = ExpenseCategory("entertainment")
+    package static let other = ExpenseCategory("other")
+
+    package static let builtins: [ExpenseCategory] = [
+        .rent, .garage, .utilities, .subscriptions, .internet,
+        .transport, .food, .health, .entertainment, .other,
+    ]
+
+    package static var all: [ExpenseCategory] {
+        builtins
+            + CustomCategoryCatalog.shared.categories.map {
+                ExpenseCategory("custom:\($0.id.uuidString)")
+            }
+    }
+
+    package var customID: UUID? {
+        guard rawValue.hasPrefix("custom:") else { return nil }
+        return UUID(uuidString: String(rawValue.dropFirst("custom:".count)))
+    }
+
+    package var custom: CustomExpenseCategory? {
+        guard let customID else { return nil }
+        return CustomCategoryCatalog.shared.category(id: customID)
+    }
+
+    package var isCustom: Bool { customID != nil }
+
     package var title: String {
-        switch self {
-        case .rent: "Квартира"
-        case .garage: "Гараж"
-        case .utilities: "Коммуналка"
-        case .subscriptions: "Подписки"
-        case .internet: "Интернет и связь"
-        case .transport: "Транспорт"
-        case .food: "Продукты"
-        case .health: "Здоровье"
-        case .entertainment: "Развлечения"
-        case .other: "Прочее"
+        if let custom { return custom.name }
+        switch rawValue {
+        case "rent": return "Квартира"
+        case "garage": return "Гараж"
+        case "utilities": return "Коммуналка"
+        case "subscriptions": return "Подписки"
+        case "internet": return "Интернет и связь"
+        case "transport": return "Транспорт"
+        case "food": return "Продукты"
+        case "health": return "Здоровье"
+        case "entertainment": return "Развлечения"
+        case "other": return "Прочее"
+        default: return "Категория"
         }
     }
 
     package var icon: String {
-        switch self {
-        case .rent: "building.2.fill"
-        case .garage: "car.fill"
-        case .utilities: "bolt.fill"
-        case .subscriptions: "creditcard.fill"
-        case .internet: "wifi"
-        case .transport: "tram.fill"
-        case .food: "cart.fill"
-        case .health: "heart.fill"
-        case .entertainment: "popcorn.fill"
-        case .other: "square.grid.2x2.fill"
+        if let custom { return custom.icon }
+        switch rawValue {
+        case "rent": return "building.2.fill"
+        case "garage": return "car.fill"
+        case "utilities": return "bolt.fill"
+        case "subscriptions": return "creditcard.fill"
+        case "internet": return "wifi"
+        case "transport": return "tram.fill"
+        case "food": return "cart.fill"
+        case "health": return "heart.fill"
+        case "entertainment": return "popcorn.fill"
+        case "other": return "square.grid.2x2.fill"
+        default: return "tag.fill"
         }
+    }
+
+    package var tint: TintColor? {
+        custom?.tint
     }
 
     /// Жильё, гараж, коммуналка, интернет — обязательные регулярные траты.
     package var isMandatory: Bool {
-        switch self {
-        case .rent, .garage, .utilities, .internet: true
-        default: false
+        if let custom { return custom.isMandatory }
+        switch rawValue {
+        case "rent", "garage", "utilities", "internet": return true
+        default: return false
         }
     }
 }
@@ -224,7 +272,7 @@ package enum SubscriptionCycle: String, CaseIterable, Codable, Identifiable, Has
 
 // MARK: - Цвета для подписок
 
-package enum TintColor: String, CaseIterable, Identifiable, Hashable {
+package enum TintColor: String, CaseIterable, Codable, Identifiable, Hashable, Sendable {
     case blue, teal, green, orange, red, pink, purple, indigo, brown, gray
 
     package var id: String { rawValue }

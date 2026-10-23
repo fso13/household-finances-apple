@@ -19,17 +19,21 @@ package extension IncomeType {
 
 package extension ExpenseCategory {
     var color: Color {
-        switch self {
-        case .rent: .blue
-        case .garage: .brown
-        case .utilities: .orange
-        case .subscriptions: .purple
-        case .internet: .cyan
-        case .transport: .teal
-        case .food: .green
-        case .health: .pink
-        case .entertainment: .indigo
-        case .other: .gray
+        if let tint {
+            return tint.color
+        }
+        switch rawValue {
+        case "rent": return .blue
+        case "garage": return .brown
+        case "utilities": return .orange
+        case "subscriptions": return .purple
+        case "internet": return .cyan
+        case "transport": return .teal
+        case "food": return .green
+        case "health": return .pink
+        case "entertainment": return .indigo
+        case "other": return .gray
+        default: return .gray
         }
     }
 }

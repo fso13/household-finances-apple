@@ -52,6 +52,7 @@ package enum BackupCodec {
                 FetchDescriptor<Budget>(sortBy: [SortDescriptor(\.year), SortDescriptor(\.month)])
             )
             let goals = try context.fetch(FetchDescriptor<SavingsGoal>(sortBy: [SortDescriptor(\.name)]))
+            let customCategories = CustomCategoryCatalog.shared.categories
 
             return BackupEnvelope(
                 appVersion: appVersion,
@@ -62,7 +63,8 @@ package enum BackupCodec {
                     recurring: recurring.map(RecurringBackup.init),
                     subscriptions: subscriptions.map(SubscriptionBackup.init),
                     budgets: budgets.map(BudgetBackup.init),
-                    goals: goals.map(SavingsGoalBackup.init)
+                    goals: goals.map(SavingsGoalBackup.init),
+                    customCategories: customCategories
                 )
             )
         } catch {
@@ -91,6 +93,14 @@ package enum BackupCodec {
                 in: automaticBackupFolder
             )
             try DemoData.clear(context: context)
+        }
+
+        if let customCategories = envelope.data.customCategories {
+            if mode == .replace {
+                CustomCategoryCatalog.shared.replaceAll(customCategories)
+            } else {
+                CustomCategoryCatalog.shared.merge(customCategories)
+            }
         }
 
         let existingIncomes = try context.fetch(FetchDescriptor<IncomeEntry>())
