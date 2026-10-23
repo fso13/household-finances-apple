@@ -44,6 +44,7 @@ package struct BackupData: Codable, Sendable {
     package var recurringDetails: [RecurringDetailBackup]?
     package var priceChanges: [RecurringPriceChangeBackup]?
     package var categoryRules: [CategoryRule]?
+    package var settings: [String: String]?
 
     package init(
         incomes: [IncomeBackup] = [],
@@ -56,7 +57,8 @@ package struct BackupData: Codable, Sendable {
         periods: [PaymentPeriodBackup]? = [],
         recurringDetails: [RecurringDetailBackup]? = [],
         priceChanges: [RecurringPriceChangeBackup]? = [],
-        categoryRules: [CategoryRule]? = []
+        categoryRules: [CategoryRule]? = [],
+        settings: [String: String]? = [:]
     ) {
         self.incomes = incomes
         self.expenses = expenses
@@ -69,6 +71,7 @@ package struct BackupData: Codable, Sendable {
         self.recurringDetails = recurringDetails
         self.priceChanges = priceChanges
         self.categoryRules = categoryRules
+        self.settings = settings
     }
 
     package var totalCount: Int {

@@ -88,6 +88,9 @@ final class BackupTests: XCTestCase {
                 ],
                 categoryRules: [
                     CategoryRule(keyword: "пятёрочка", category: .food)
+                ],
+                settings: [
+                    "dashboard.showCharts": "0"
                 ]
             )
         )
@@ -111,6 +114,7 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(decoded.data.recurringDetails?.first?.recurringKey, "test")
         XCTAssertEqual(decoded.data.priceChanges?.first?.amount, 50_000)
         XCTAssertEqual(decoded.data.categoryRules?.first?.keyword, "пятёрочка")
+        XCTAssertEqual(decoded.data.settings?["dashboard.showCharts"], "0")
     }
 
     func testDecodeRejectsUnknownFormat() throws {
@@ -144,6 +148,7 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<RecurringDetail>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<RecurringPriceChange>()), 1)
         XCTAssertEqual(CategoryRuleCatalog.shared.rules.count, 1)
+        XCTAssertEqual(UserDefaults.standard.bool(forKey: "dashboard.showCharts"), false)
         XCTAssertEqual(CustomCategoryCatalog.shared.categories.count, 1)
     }
 

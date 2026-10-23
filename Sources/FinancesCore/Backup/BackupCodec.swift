@@ -61,6 +61,7 @@ package enum BackupCodec {
                 FetchDescriptor<RecurringPriceChange>(sortBy: [SortDescriptor(\.effectiveDate)])
             )
             let categoryRules = CategoryRuleCatalog.shared.rules
+            let settings = backupSettings()
 
             return BackupEnvelope(
                 appVersion: appVersion,
@@ -76,7 +77,8 @@ package enum BackupCodec {
                     periods: periods.map(PaymentPeriodBackup.init),
                     recurringDetails: details.map(RecurringDetailBackup.init),
                     priceChanges: priceChanges.map(RecurringPriceChangeBackup.init),
-                    categoryRules: categoryRules
+                    categoryRules: categoryRules,
+                    settings: settings
                 )
             )
         } catch {
@@ -121,6 +123,10 @@ package enum BackupCodec {
             } else {
                 CategoryRuleCatalog.shared.merge(categoryRules)
             }
+        }
+
+        if mode == .replace, let settings = envelope.data.settings {
+            restoreSettings(settings)
         }
 
         let existingIncomes = try context.fetch(FetchDescriptor<IncomeEntry>())
@@ -343,6 +349,40 @@ package enum BackupCodec {
 
     private static func subscriptionKey(_ subscription: Subscription) -> String {
         "\(subscription.name)|\(subscription.amount)|\(subscription.cycle.rawValue)"
+    }
+
+    private static let settingsKeys = [
+        "dashboard.showForecast",
+        "dashboard.showCharts",
+        "dashboard.showFixed",
+        "dashboard.showSubscriptions",
+        "dashboard.showBudgets",
+        "budgetNotificationsEnabled",
+        "paymentRemindersEnabled",
+        "scheduledReportEnabled",
+        "scheduledReportFrequency",
+    ]
+
+    private static func backupSettings() -> [String: String] {
+        var result: [String: String] = [:]
+        for key in settingsKeys {
+            if let bool = UserDefaults.standard.object(forKey: key) as? Bool {
+                result[key] = bool ? "1" : "0"
+            } else if let string = UserDefaults.standard.string(forKey: key) {
+                result[key] = string
+            }
+        }
+        return result
+    }
+
+    private static func restoreSettings(_ settings: [String: String]) {
+        for (key, value) in settings where settingsKeys.contains(key) {
+            if value == "1" || value == "0" {
+                UserDefaults.standard.set(value == "1", forKey: key)
+            } else {
+                UserDefaults.standard.set(value, forKey: key)
+            }
+        }
     }
 
     private static func priceChangeKey(_ change: RecurringPriceChange) -> String {
