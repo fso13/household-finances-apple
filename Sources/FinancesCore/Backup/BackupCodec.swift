@@ -48,6 +48,9 @@ package enum BackupCodec {
             let expenses = try context.fetch(FetchDescriptor<ExpenseEntry>(sortBy: [SortDescriptor(\.date)]))
             let recurring = try context.fetch(FetchDescriptor<RecurringPayment>(sortBy: [SortDescriptor(\.title)]))
             let subscriptions = try context.fetch(FetchDescriptor<Subscription>(sortBy: [SortDescriptor(\.name)]))
+            let budgets = try context.fetch(
+                FetchDescriptor<Budget>(sortBy: [SortDescriptor(\.year), SortDescriptor(\.month)])
+            )
 
             return BackupEnvelope(
                 appVersion: appVersion,
@@ -56,7 +59,8 @@ package enum BackupCodec {
                     incomes: incomes.map(IncomeBackup.init),
                     expenses: expenses.map(ExpenseBackup.init),
                     recurring: recurring.map(RecurringBackup.init),
-                    subscriptions: subscriptions.map(SubscriptionBackup.init)
+                    subscriptions: subscriptions.map(SubscriptionBackup.init),
+                    budgets: budgets.map(BudgetBackup.init)
                 )
             )
         } catch {
@@ -91,11 +95,13 @@ package enum BackupCodec {
         let existingExpenses = try context.fetch(FetchDescriptor<ExpenseEntry>())
         let existingRecurring = try context.fetch(FetchDescriptor<RecurringPayment>())
         let existingSubscriptions = try context.fetch(FetchDescriptor<Subscription>())
+        let existingBudgets = try context.fetch(FetchDescriptor<Budget>())
 
         var incomeKeys = Set(existingIncomes.map { incomeKey($0) })
         var expenseKeys = Set(existingExpenses.map { expenseKey($0) })
         var recurringKeys = Set(existingRecurring.map { recurringKey($0) })
         var subscriptionKeys = Set(existingSubscriptions.map { subscriptionKey($0) })
+        var budgetKeys = Set(existingBudgets.map { budgetKey($0) })
 
         var summary = RestoreSummary(mode: mode)
 
@@ -183,6 +189,25 @@ package enum BackupCodec {
             summary.inserted += 1
         }
 
+        for item in envelope.data.budgets ?? [] {
+            let key = "\(item.year)|\(item.month)|\(item.category)"
+            guard mode == .replace || !budgetKeys.contains(key) else {
+                summary.skipped += 1
+                continue
+            }
+            context.insert(
+                Budget(
+                    category: ExpenseCategory(rawValue: item.category) ?? .other,
+                    year: item.year,
+                    month: item.month,
+                    limit: item.limit,
+                    note: item.note
+                )
+            )
+            budgetKeys.insert(key)
+            summary.inserted += 1
+        }
+
         try Persistence.save(context, operation: "backup.restore")
         return summary
     }
@@ -203,5 +228,9 @@ package enum BackupCodec {
 
     private static func subscriptionKey(_ subscription: Subscription) -> String {
         "\(subscription.name)|\(subscription.amount)|\(subscription.cycle.rawValue)"
+    }
+
+    private static func budgetKey(_ budget: Budget) -> String {
+        "\(budget.year)|\(budget.month)|\(budget.category.rawValue)"
     }
 }

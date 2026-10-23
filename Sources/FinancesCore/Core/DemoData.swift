@@ -289,6 +289,23 @@ package enum DemoData {
             }
         }
 
+        let budgetSpecs: [(ExpenseCategory, Double)] = [
+            (.food, 30_000),
+            (.transport, 8_000),
+            (.entertainment, 10_000),
+            (.health, 5_000),
+        ]
+        for (category, limit) in budgetSpecs {
+            context.insert(
+                Budget(
+                    category: category,
+                    year: now.year,
+                    month: now.month,
+                    limit: limit
+                )
+            )
+        }
+
         try Persistence.save(context, operation: "demo.seed")
     }
 
@@ -297,6 +314,7 @@ package enum DemoData {
         try deleteAll(ExpenseEntry.self, context: context)
         try deleteAll(RecurringPayment.self, context: context)
         try deleteAll(Subscription.self, context: context)
+        try deleteAll(Budget.self, context: context)
         try Persistence.save(context, operation: "demo.clear")
     }
 

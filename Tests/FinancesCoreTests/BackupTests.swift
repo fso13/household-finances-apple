@@ -11,6 +11,7 @@ final class BackupTests: XCTestCase {
             ExpenseEntry.self,
             RecurringPayment.self,
             Subscription.self,
+            Budget.self,
             configurations: configuration
         )
         return ModelContext(container)
@@ -40,6 +41,9 @@ final class BackupTests: XCTestCase {
                 ],
                 subscriptions: [
                     SubscriptionBackup(Subscription(name: "Музыка", amount: 199, cycle: .monthly))
+                ],
+                budgets: [
+                    BudgetBackup(category: "food", year: 2026, month: 10, limit: 30_000, note: "")
                 ]
             )
         )
@@ -56,6 +60,7 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(decoded.data.incomes.first?.amount, 1_000)
         XCTAssertEqual(decoded.data.recurring.first?.rounding, "up")
         XCTAssertEqual(decoded.data.subscriptions.first?.name, "Музыка")
+        XCTAssertEqual(decoded.data.budgets?.first?.limit, 30_000)
     }
 
     func testDecodeRejectsUnknownFormat() throws {
@@ -78,11 +83,12 @@ final class BackupTests: XCTestCase {
                 .appendingPathComponent("finances-backup-tests-\(UUID().uuidString)")
         )
 
-        XCTAssertEqual(summary.inserted, 4)
+        XCTAssertEqual(summary.inserted, 5)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<IncomeEntry>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<ExpenseEntry>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<RecurringPayment>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<Subscription>()), 1)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<Budget>()), 1)
     }
 
     func testRestoreMergeSkipsDuplicates() throws {
@@ -101,9 +107,9 @@ final class BackupTests: XCTestCase {
             automaticBackupFolder: FileManager.default.temporaryDirectory
         )
 
-        XCTAssertEqual(first.inserted, 4)
+        XCTAssertEqual(first.inserted, 5)
         XCTAssertEqual(second.inserted, 0)
-        XCTAssertEqual(second.skipped, 4)
+        XCTAssertEqual(second.skipped, 5)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<IncomeEntry>()), 1)
     }
 

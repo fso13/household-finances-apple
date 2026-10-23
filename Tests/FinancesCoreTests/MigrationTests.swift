@@ -16,7 +16,7 @@ final class MigrationTests: XCTestCase {
         try LegacyMigration.seedLegacyStoreForTests(at: legacyURL)
         XCTAssertTrue(try LegacyMigration.migrateIfNeeded(legacyURL: legacyURL, newURL: newURL))
 
-        let schema = Schema(versionedSchema: FinancesSchemaV2.self)
+        let schema = Schema(versionedSchema: FinancesSchemaV3.self)
         let configuration = ModelConfiguration("FinancesV2", schema: schema, url: newURL)
         let container = try ModelContainer(for: schema, configurations: configuration)
         let context = ModelContext(container)

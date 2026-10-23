@@ -37,21 +37,24 @@ package struct BackupData: Codable, Sendable {
     package var expenses: [ExpenseBackup]
     package var recurring: [RecurringBackup]
     package var subscriptions: [SubscriptionBackup]
+    package var budgets: [BudgetBackup]?
 
     package init(
         incomes: [IncomeBackup] = [],
         expenses: [ExpenseBackup] = [],
         recurring: [RecurringBackup] = [],
-        subscriptions: [SubscriptionBackup] = []
+        subscriptions: [SubscriptionBackup] = [],
+        budgets: [BudgetBackup]? = []
     ) {
         self.incomes = incomes
         self.expenses = expenses
         self.recurring = recurring
         self.subscriptions = subscriptions
+        self.budgets = budgets
     }
 
     package var totalCount: Int {
-        incomes.count + expenses.count + recurring.count + subscriptions.count
+        incomes.count + expenses.count + recurring.count + subscriptions.count + (budgets?.count ?? 0)
     }
 }
 
@@ -123,6 +126,30 @@ package struct RecurringBackup: Codable, Sendable {
         startDate = payment.startDate
         isActive = payment.isActive
         note = payment.note
+    }
+}
+
+package struct BudgetBackup: Codable, Sendable {
+    package var category: String
+    package var year: Int
+    package var month: Int
+    package var limit: Double
+    package var note: String
+
+    package init(_ budget: Budget) {
+        category = budget.category.rawValue
+        year = budget.year
+        month = budget.month
+        limit = budget.limit
+        note = budget.note
+    }
+
+    package init(category: String, year: Int, month: Int, limit: Double, note: String) {
+        self.category = category
+        self.year = year
+        self.month = month
+        self.limit = limit
+        self.note = note
     }
 }
 

@@ -10,6 +10,7 @@ struct DashboardView: View {
     @Query(sort: \ExpenseEntry.date, order: .reverse) private var expenses: [ExpenseEntry]
     @Query private var recurring: [RecurringPayment]
     @Query private var subscriptions: [Subscription]
+    @Query private var budgets: [Budget]
 
     @State private var month: Date = Date().startOfMonth
     @State private var quickAdd: QuickAddKind?
@@ -82,6 +83,10 @@ struct DashboardView: View {
         Slices.expenses(monthExpenses)
     }
 
+    private var budgetProgress: [BudgetProgress] {
+        BudgetService.progress(budgets: budgets, expenses: expenses, month: month)
+    }
+
     private var hasAnyData: Bool {
         !incomes.isEmpty || !expenses.isEmpty || !recurring.isEmpty || !subscriptions.isEmpty
     }
@@ -126,6 +131,10 @@ struct DashboardView: View {
                             .frame(maxWidth: .infinity)
                         subscriptionsCard
                             .frame(maxWidth: .infinity)
+                    }
+
+                    if !budgetProgress.isEmpty {
+                        budgetCard
                     }
                 }
             }
@@ -431,6 +440,59 @@ struct DashboardView: View {
                     Text(Fmt.moneyRounded(Stats.total(activeSubscriptions.map(\.yearlyCost))))
                         .font(.caption.weight(.semibold))
                         .monospacedDigit()
+                }
+            }
+        }
+    }
+
+    private var budgetCard: some View {
+        CardView {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top) {
+                    SectionHeader(
+                        title: "Бюджеты",
+                        subtitle: "лимиты на \(MonthFormat.monthTitle(month).lowercased())",
+                        icon: "target",
+                        tint: .green
+                    )
+                    Spacer()
+                    let summary = BudgetService.summary(budgetProgress)
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text(Fmt.moneyRounded(summary.remaining))
+                            .font(.callout.weight(.bold))
+                            .monospacedDigit()
+                            .foregroundStyle(summary.remaining < 0 ? .red : .primary)
+                        Text(summary.remaining < 0 ? "перерасход" : "осталось")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+
+                HStack(alignment: .top, spacing: 16) {
+                    ForEach(budgetProgress.prefix(3)) { item in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 5) {
+                                Image(systemName: item.category.icon)
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(item.category.color)
+                                Text(item.category.title)
+                                    .font(.caption)
+                                    .lineLimit(1)
+                                Spacer(minLength: 4)
+                                Text(Fmt.percent(item.fraction))
+                                    .font(.caption2)
+                                    .monospacedDigit()
+                                    .foregroundStyle(item.isOver ? .red : .secondary)
+                            }
+                            ProgressView(value: min(item.fraction, 1))
+                                .tint(item.isOver ? .red : item.category.color)
+                            Text("\(Fmt.compact(item.spent)) из \(Fmt.compact(item.limit))")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                                .monospacedDigit()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
         }

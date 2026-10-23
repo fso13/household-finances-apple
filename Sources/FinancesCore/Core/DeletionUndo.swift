@@ -27,6 +27,11 @@ package enum DeletionUndo {
         registerDeletion(in: context, restore: { snapshot.restore(in: $0) })
     }
 
+    package static func register(_ budget: Budget, in context: ModelContext) {
+        let snapshot = BudgetSnapshot(budget)
+        registerDeletion(in: context, restore: { snapshot.restore(in: $0) })
+    }
+
     // MARK: - Общий механизм
 
     private static func registerDeletion<Model: PersistentModel>(
@@ -152,6 +157,34 @@ private struct RecurringSnapshot {
         )
         context.insert(payment)
         return payment
+    }
+}
+
+private struct BudgetSnapshot {
+    let category: ExpenseCategory
+    let year: Int
+    let month: Int
+    let limit: Double
+    let note: String
+
+    init(_ budget: Budget) {
+        category = budget.category
+        year = budget.year
+        month = budget.month
+        limit = budget.limit
+        note = budget.note
+    }
+
+    func restore(in context: ModelContext) -> Budget {
+        let budget = Budget(
+            category: category,
+            year: year,
+            month: month,
+            limit: limit,
+            note: note
+        )
+        context.insert(budget)
+        return budget
     }
 }
 

@@ -19,10 +19,12 @@ package enum FinancesSchemaV2: VersionedSchema {
 
 package enum FinancesMigrationPlan: SchemaMigrationPlan {
     package static var schemas: [any VersionedSchema.Type] {
-        [FinancesSchemaV2.self]
+        [FinancesSchemaV2.self, FinancesSchemaV3.self]
     }
 
     package static var stages: [MigrationStage] {
-        []
+        [
+            .lightweight(fromVersion: FinancesSchemaV2.self, toVersion: FinancesSchemaV3.self)
+        ]
     }
 }

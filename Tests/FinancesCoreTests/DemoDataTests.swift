@@ -11,6 +11,7 @@ final class DemoDataTests: XCTestCase {
             ExpenseEntry.self,
             RecurringPayment.self,
             Subscription.self,
+            Budget.self,
             configurations: configuration
         )
         return ModelContext(container)
@@ -24,11 +25,13 @@ final class DemoDataTests: XCTestCase {
         let expenseCount = try context.fetchCount(FetchDescriptor<ExpenseEntry>())
         let recurringCount = try context.fetchCount(FetchDescriptor<RecurringPayment>())
         let subscriptionCount = try context.fetchCount(FetchDescriptor<Subscription>())
+        let budgetCount = try context.fetchCount(FetchDescriptor<Budget>())
 
         XCTAssertGreaterThan(incomeCount, 0)
         XCTAssertGreaterThan(expenseCount, 0)
         XCTAssertEqual(recurringCount, 4)
         XCTAssertEqual(subscriptionCount, 7)
+        XCTAssertEqual(budgetCount, 4)
 
         try DemoData.seed(context: context)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<IncomeEntry>()), incomeCount)
