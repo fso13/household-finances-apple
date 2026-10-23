@@ -50,6 +50,44 @@ package enum ComparisonService {
             .sorted { abs($0.delta) > abs($1.delta) }
     }
 
+    package static func categoryChanges(
+        expenses: [ExpenseEntry],
+        currentYear: Int
+    ) -> [CategoryChange] {
+        let current = totalsByCategory(expenses, year: currentYear)
+        let previous = totalsByCategory(expenses, year: currentYear - 1)
+        let categories = Set(current.keys).union(previous.keys)
+
+        return
+            categories
+            .map { category in
+                CategoryChange(
+                    category: category,
+                    current: current[category] ?? 0,
+                    previous: previous[category] ?? 0
+                )
+            }
+            .filter { abs($0.delta) >= 0.005 }
+            .sorted { abs($0.delta) > abs($1.delta) }
+    }
+
+    package static func totals(
+        incomes: [IncomeEntry],
+        expenses: [ExpenseEntry],
+        year: Int
+    ) -> PeriodTotals {
+        PeriodTotals(
+            income:
+                incomes
+                .filter { $0.date.year == year }
+                .reduce(0) { $0 + $1.amount },
+            expense:
+                expenses
+                .filter { $0.date.year == year }
+                .reduce(0) { $0 + $1.amount }
+        )
+    }
+
     package static func totals(
         incomes: [IncomeEntry],
         expenses: [ExpenseEntry],
@@ -65,6 +103,17 @@ package enum ComparisonService {
                 .filter { $0.date.isSameMonth(as: month) }
                 .reduce(0) { $0 + $1.amount }
         )
+    }
+
+    private static func totalsByCategory(
+        _ expenses: [ExpenseEntry],
+        year: Int
+    ) -> [ExpenseCategory: Double] {
+        var result: [ExpenseCategory: Double] = [:]
+        for expense in expenses where expense.date.year == year {
+            result[expense.category, default: 0] += expense.amount
+        }
+        return result
     }
 
     private static func totalsByCategory(

@@ -13,6 +13,16 @@ struct AnalyticsView: View {
     @State private var selectedCategories: Set<ExpenseCategory> = []
     @State private var search = ""
     @State private var comparisonMonth: Date = Date().startOfMonth
+    @State private var comparisonMode: ComparisonMode = .month
+    @State private var comparisonYear: Int = Date().year
+
+    private enum ComparisonMode: String, CaseIterable, Identifiable {
+        case month
+        case year
+
+        var id: String { rawValue }
+        var title: String { self == .month ? "Месяц" : "Год" }
+    }
 
     // MARK: - Данные и фильтры
 
@@ -116,26 +126,62 @@ struct AnalyticsView: View {
     }
 
     private var comparisonChanges: [CategoryChange] {
-        ComparisonService.categoryChanges(
-            expenses: expenses,
-            currentMonth: comparisonMonth
-        )
+        switch comparisonMode {
+        case .month:
+            return ComparisonService.categoryChanges(
+                expenses: expenses,
+                currentMonth: comparisonMonth
+            )
+        case .year:
+            return ComparisonService.categoryChanges(
+                expenses: expenses,
+                currentYear: comparisonYear
+            )
+        }
     }
 
     private var comparisonCurrent: PeriodTotals {
-        ComparisonService.totals(
-            incomes: incomes,
-            expenses: expenses,
-            in: comparisonMonth
-        )
+        switch comparisonMode {
+        case .month:
+            return ComparisonService.totals(
+                incomes: incomes,
+                expenses: expenses,
+                in: comparisonMonth
+            )
+        case .year:
+            return ComparisonService.totals(
+                incomes: incomes,
+                expenses: expenses,
+                year: comparisonYear
+            )
+        }
     }
 
     private var comparisonPrevious: PeriodTotals {
-        ComparisonService.totals(
-            incomes: incomes,
-            expenses: expenses,
-            in: comparisonMonth.addingMonths(-1)
-        )
+        switch comparisonMode {
+        case .month:
+            return ComparisonService.totals(
+                incomes: incomes,
+                expenses: expenses,
+                in: comparisonMonth.addingMonths(-1)
+            )
+        case .year:
+            return ComparisonService.totals(
+                incomes: incomes,
+                expenses: expenses,
+                year: comparisonYear - 1
+            )
+        }
+    }
+
+    private var comparisonSubtitle: String {
+        switch comparisonMode {
+        case .month:
+            return
+                "\(MonthFormat.monthTitle(comparisonMonth)) к \(MonthFormat.monthTitle(comparisonMonth.addingMonths(-1)))"
+        case .year:
+            return "\(comparisonYear) к \(comparisonYear - 1)"
+        }
     }
 
     private var monthStride: Int {
@@ -414,14 +460,13 @@ struct AnalyticsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top) {
                     SectionHeader(
-                        title: "Изменения к прошлому месяцу",
-                        subtitle:
-                            "\(MonthFormat.monthTitle(comparisonMonth)) к \(MonthFormat.monthTitle(comparisonMonth.addingMonths(-1)))",
+                        title: "Изменения к прошлому периоду",
+                        subtitle: comparisonSubtitle,
                         icon: "arrow.left.arrow.right",
                         tint: .indigo
                     )
                     Spacer()
-                    MonthNavigator(month: $comparisonMonth)
+                    comparisonControls
                 }
 
                 HStack(spacing: 12) {
@@ -486,6 +531,44 @@ struct AnalyticsView: View {
                             Divider().padding(.leading, 38)
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private var comparisonControls: some View {
+        HStack(spacing: 10) {
+            Picker("Период", selection: $comparisonMode) {
+                ForEach(ComparisonMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 130)
+
+            if comparisonMode == .month {
+                MonthNavigator(month: $comparisonMonth)
+            } else {
+                HStack(spacing: 6) {
+                    Button {
+                        comparisonYear -= 1
+                    } label: {
+                        Image(systemName: "chevron.left")
+                    }
+                    .buttonStyle(.borderless)
+
+                    Text(String(comparisonYear))
+                        .font(.callout.weight(.semibold))
+                        .monospacedDigit()
+                        .frame(width: 48)
+
+                    Button {
+                        comparisonYear += 1
+                    } label: {
+                        Image(systemName: "chevron.right")
+                    }
+                    .buttonStyle(.borderless)
                 }
             }
         }
