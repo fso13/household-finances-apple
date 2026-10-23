@@ -69,9 +69,14 @@ package struct BackupData: Codable, Sendable {
     }
 
     package var totalCount: Int {
-        incomes.count + expenses.count + recurring.count + subscriptions.count + (budgets?.count ?? 0)
-            + (goals?.count ?? 0) + (periods?.count ?? 0)
-            + (recurringDetails?.count ?? 0) + (priceChanges?.count ?? 0)
+        var count = incomes.count + expenses.count
+        count += recurring.count + subscriptions.count
+        count += budgets?.count ?? 0
+        count += goals?.count ?? 0
+        count += periods?.count ?? 0
+        count += recurringDetails?.count ?? 0
+        count += priceChanges?.count ?? 0
+        return count
     }
 }
 
