@@ -56,6 +56,10 @@ package enum BackupCodec {
             let periods = try context.fetch(
                 FetchDescriptor<PaymentPeriod>(sortBy: [SortDescriptor(\.periodStart), SortDescriptor(\.title)])
             )
+            let details = try context.fetch(FetchDescriptor<RecurringDetail>())
+            let priceChanges = try context.fetch(
+                FetchDescriptor<RecurringPriceChange>(sortBy: [SortDescriptor(\.effectiveDate)])
+            )
 
             return BackupEnvelope(
                 appVersion: appVersion,
@@ -68,7 +72,9 @@ package enum BackupCodec {
                     budgets: budgets.map(BudgetBackup.init),
                     goals: goals.map(SavingsGoalBackup.init),
                     customCategories: customCategories,
-                    periods: periods.map(PaymentPeriodBackup.init)
+                    periods: periods.map(PaymentPeriodBackup.init),
+                    recurringDetails: details.map(RecurringDetailBackup.init),
+                    priceChanges: priceChanges.map(RecurringPriceChangeBackup.init)
                 )
             )
         } catch {
@@ -114,6 +120,8 @@ package enum BackupCodec {
         let existingBudgets = try context.fetch(FetchDescriptor<Budget>())
         let existingGoals = try context.fetch(FetchDescriptor<SavingsGoal>())
         let existingPeriods = try context.fetch(FetchDescriptor<PaymentPeriod>())
+        let existingDetails = try context.fetch(FetchDescriptor<RecurringDetail>())
+        let existingPriceChanges = try context.fetch(FetchDescriptor<RecurringPriceChange>())
 
         var incomeKeys = Set(existingIncomes.map { incomeKey($0) })
         var expenseKeys = Set(existingExpenses.map { expenseKey($0) })
@@ -122,6 +130,8 @@ package enum BackupCodec {
         var budgetKeys = Set(existingBudgets.map { budgetKey($0) })
         var goalKeys = Set(existingGoals.map { $0.name })
         var periodKeys = Set(existingPeriods.map { periodKey($0) })
+        var detailKeys = Set(existingDetails.map { $0.recurringKey })
+        var priceKeys = Set(existingPriceChanges.map { priceChangeKey($0) })
 
         var summary = RestoreSummary(mode: mode)
 
@@ -208,6 +218,41 @@ package enum BackupCodec {
             summary.inserted += 1
         }
 
+        for item in envelope.data.recurringDetails ?? [] {
+            guard mode == .replace || !detailKeys.contains(item.recurringKey) else {
+                summary.skipped += 1
+                continue
+            }
+            context.insert(
+                RecurringDetail(
+                    recurringKey: item.recurringKey,
+                    endDate: item.endDate,
+                    autoPay: item.autoPay,
+                    note: item.note
+                )
+            )
+            detailKeys.insert(item.recurringKey)
+            summary.inserted += 1
+        }
+
+        for item in envelope.data.priceChanges ?? [] {
+            let key = "\(item.recurringKey)|\(item.effectiveDate.timeIntervalSince1970)|\(item.amount)"
+            guard mode == .replace || !priceKeys.contains(key) else {
+                summary.skipped += 1
+                continue
+            }
+            context.insert(
+                RecurringPriceChange(
+                    recurringKey: item.recurringKey,
+                    effectiveDate: item.effectiveDate,
+                    amount: item.amount,
+                    note: item.note
+                )
+            )
+            priceKeys.insert(key)
+            summary.inserted += 1
+        }
+
         for item in envelope.data.subscriptions {
             let key = "\(item.name)|\(item.amount)|\(item.cycle)"
             guard mode == .replace || !subscriptionKeys.contains(key) else {
@@ -288,6 +333,10 @@ package enum BackupCodec {
 
     private static func subscriptionKey(_ subscription: Subscription) -> String {
         "\(subscription.name)|\(subscription.amount)|\(subscription.cycle.rawValue)"
+    }
+
+    private static func priceChangeKey(_ change: RecurringPriceChange) -> String {
+        "\(change.recurringKey)|\(change.effectiveDate.timeIntervalSince1970)|\(change.amount)"
     }
 
     private static func periodKey(_ period: PaymentPeriod) -> String {

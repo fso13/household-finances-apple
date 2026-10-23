@@ -14,6 +14,8 @@ final class UndoTests: XCTestCase {
             Budget.self,
             SavingsGoal.self,
             PaymentPeriod.self,
+            RecurringDetail.self,
+            RecurringPriceChange.self,
             configurations: configuration
         )
         let context = ModelContext(container)

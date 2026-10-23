@@ -75,6 +75,24 @@ package enum DemoData {
 
         [rent, utilities, garage, internet].forEach(context.insert)
 
+        context.insert(RecurringDetail(payment: rent, autoPay: true))
+        context.insert(
+            RecurringPriceChange(
+                payment: rent,
+                effectiveDate: now.addingMonths(-12),
+                amount: 45_000,
+                note: "Индексация"
+            )
+        )
+        context.insert(
+            RecurringPriceChange(
+                payment: rent,
+                effectiveDate: now.addingMonths(-6),
+                amount: 47_250,
+                note: "Индексация"
+            )
+        )
+
         // Подписки
         let subscriptionSpecs:
             [(name: String, amount: Double, cycle: SubscriptionCycle, tint: TintColor, icon: String, day: Int)] = [
@@ -336,6 +354,8 @@ package enum DemoData {
         try deleteAll(Budget.self, context: context)
         try deleteAll(SavingsGoal.self, context: context)
         try deleteAll(PaymentPeriod.self, context: context)
+        try deleteAll(RecurringDetail.self, context: context)
+        try deleteAll(RecurringPriceChange.self, context: context)
         CustomCategoryCatalog.shared.replaceAll([])
         try Persistence.save(context, operation: "demo.clear")
     }

@@ -41,6 +41,8 @@ package struct BackupData: Codable, Sendable {
     package var goals: [SavingsGoalBackup]?
     package var customCategories: [CustomExpenseCategory]?
     package var periods: [PaymentPeriodBackup]?
+    package var recurringDetails: [RecurringDetailBackup]?
+    package var priceChanges: [RecurringPriceChangeBackup]?
 
     package init(
         incomes: [IncomeBackup] = [],
@@ -50,7 +52,9 @@ package struct BackupData: Codable, Sendable {
         budgets: [BudgetBackup]? = [],
         goals: [SavingsGoalBackup]? = [],
         customCategories: [CustomExpenseCategory]? = [],
-        periods: [PaymentPeriodBackup]? = []
+        periods: [PaymentPeriodBackup]? = [],
+        recurringDetails: [RecurringDetailBackup]? = [],
+        priceChanges: [RecurringPriceChangeBackup]? = []
     ) {
         self.incomes = incomes
         self.expenses = expenses
@@ -60,11 +64,14 @@ package struct BackupData: Codable, Sendable {
         self.goals = goals
         self.customCategories = customCategories
         self.periods = periods
+        self.recurringDetails = recurringDetails
+        self.priceChanges = priceChanges
     }
 
     package var totalCount: Int {
         incomes.count + expenses.count + recurring.count + subscriptions.count + (budgets?.count ?? 0)
             + (goals?.count ?? 0) + (periods?.count ?? 0)
+            + (recurringDetails?.count ?? 0) + (priceChanges?.count ?? 0)
     }
 }
 
@@ -158,6 +165,48 @@ package struct PaymentPeriodBackup: Codable, Sendable {
         paidDate = period.paidDate
         title = period.title
         note = period.note
+    }
+}
+
+package struct RecurringDetailBackup: Codable, Sendable {
+    package var recurringKey: String
+    package var endDate: Date?
+    package var autoPay: Bool
+    package var note: String
+
+    package init(_ detail: RecurringDetail) {
+        recurringKey = detail.recurringKey
+        endDate = detail.endDate
+        autoPay = detail.autoPay
+        note = detail.note
+    }
+
+    package init(recurringKey: String, endDate: Date?, autoPay: Bool, note: String) {
+        self.recurringKey = recurringKey
+        self.endDate = endDate
+        self.autoPay = autoPay
+        self.note = note
+    }
+}
+
+package struct RecurringPriceChangeBackup: Codable, Sendable {
+    package var recurringKey: String
+    package var effectiveDate: Date
+    package var amount: Double
+    package var note: String
+
+    package init(_ change: RecurringPriceChange) {
+        recurringKey = change.recurringKey
+        effectiveDate = change.effectiveDate
+        amount = change.amount
+        note = change.note
+    }
+
+    package init(recurringKey: String, effectiveDate: Date, amount: Double, note: String) {
+        self.recurringKey = recurringKey
+        self.effectiveDate = effectiveDate
+        self.amount = amount
+        self.note = note
     }
 }
 

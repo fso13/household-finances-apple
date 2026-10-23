@@ -36,7 +36,7 @@ final class AppBootstrap: ObservableObject {
                 return
             }
 
-            let schema = Schema(versionedSchema: FinancesSchemaV5.self)
+            let schema = Schema(versionedSchema: FinancesSchemaV6.self)
             let configuration = ModelConfiguration("FinancesV2", schema: schema, url: StoreLocation.storeURL)
             let newContainer = try ModelContainer(
                 for: schema,

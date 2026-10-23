@@ -9,6 +9,8 @@ struct RecurringView: View {
     @Query(sort: \ExpenseEntry.date, order: .reverse) private var expenses: [ExpenseEntry]
     @Query private var periods: [PaymentPeriod]
     @Query(sort: \Subscription.name) private var subscriptions: [Subscription]
+    @Query private var details: [RecurringDetail]
+    @Query private var priceChanges: [RecurringPriceChange]
 
     @State private var editor: EditorContext?
     @State private var pendingDelete: RecurringPayment?
@@ -19,7 +21,9 @@ struct RecurringView: View {
     }
 
     private var activePayments: [RecurringPayment] {
-        payments.filter(\.isActive)
+        payments.filter {
+            RecurringDetailService.isActive($0, in: Date().startOfMonth, details: details)
+        }
     }
 
     private var sortedPayments: [RecurringPayment] {
@@ -27,7 +31,7 @@ struct RecurringView: View {
     }
 
     private var monthlyTotal: Double {
-        Stats.recurringMonthlyTotal(payments)
+        Stats.recurringMonthlyTotal(activePayments)
     }
 
     private var yearlyTotal: Double {
@@ -35,7 +39,7 @@ struct RecurringView: View {
     }
 
     private var roundingTotal: Double {
-        Stats.roundingAdjustment(payments)
+        Stats.roundingAdjustment(activePayments)
     }
 
     private var upcoming: [UpcomingPayment] {
@@ -44,7 +48,8 @@ struct RecurringView: View {
             subscriptions: subscriptions,
             periods: periods,
             expenses: expenses,
-            month: Date().startOfMonth
+            month: Date().startOfMonth,
+            details: details
         )
     }
 
@@ -79,6 +84,8 @@ struct RecurringView: View {
                                 payment: payment,
                                 expenses: expenses,
                                 periods: periods,
+                                detail: RecurringDetailService.detail(for: payment, details: details),
+                                history: RecurringDetailService.history(for: payment, changes: priceChanges),
                                 onEdit: { editor = EditorContext(payment: payment) },
                                 onDelete: { pendingDelete = payment }
                             )
@@ -104,7 +111,12 @@ struct RecurringView: View {
             }
         }
         .sheet(item: $editor) { editorContext in
-            RecurringEditorSheet(existing: editorContext.payment)
+            RecurringEditorSheet(
+                existing: editorContext.payment,
+                detail: editorContext.payment.flatMap {
+                    RecurringDetailService.detail(for: $0, details: details)
+                }
+            )
         }
         .alert(
             "Удалить обязательный платёж?",
@@ -265,6 +277,8 @@ private struct RecurringCard: View {
     @Bindable var payment: RecurringPayment
     let expenses: [ExpenseEntry]
     let periods: [PaymentPeriod]
+    let detail: RecurringDetail?
+    let history: [RecurringPriceChange]
     let onEdit: () -> Void
     let onDelete: () -> Void
 
@@ -284,6 +298,13 @@ private struct RecurringCard: View {
 
     private var currentPeriod: PaymentPeriod? {
         PaymentPeriodService.period(for: payment, month: month, periods: periods)
+    }
+
+    private var isEnded: Bool {
+        if let endDate = detail?.endDate {
+            return endDate < month
+        }
+        return false
     }
 
     private var isOverdue: Bool {
@@ -306,6 +327,8 @@ private struct RecurringCard: View {
             )
         } else if status == .skipped {
             TagBadge(text: "пропущен", color: .gray, icon: "forward.fill")
+        } else if isEnded {
+            TagBadge(text: "завершён", color: .secondary, icon: "flag.checkered")
         } else if isOverdue {
             TagBadge(text: "просрочен", color: .red, icon: "exclamationmark")
         } else {
@@ -327,6 +350,9 @@ private struct RecurringCard: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 6)
+                    if detail?.autoPay == true {
+                        TagBadge(text: "авто", color: .blue, icon: "bolt.fill")
+                    }
                     Toggle("", isOn: $payment.isActive)
                         .labelsHidden()
                         .toggleStyle(.switch)
@@ -393,6 +419,30 @@ private struct RecurringCard: View {
                         .lineLimit(2)
                 }
 
+                if let endDate = detail?.endDate {
+                    Label("до \(MonthFormat.day(endDate))", systemImage: "flag.checkered")
+                        .font(.caption2)
+                        .foregroundStyle(isEnded ? .tertiary : .secondary)
+                }
+
+                if !history.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("История суммы")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        ForEach(history.prefix(2)) { change in
+                            HStack {
+                                Text(MonthFormat.day(change.effectiveDate))
+                                    .foregroundStyle(.tertiary)
+                                Spacer()
+                                Text(Fmt.money(change.amount))
+                                    .monospacedDigit()
+                            }
+                            .font(.caption2)
+                        }
+                    }
+                }
+
                 HStack(spacing: 8) {
                     Label(
                         "далее \(MonthFormat.compactDay(payment.nextPaymentDate))",
@@ -448,10 +498,10 @@ private struct RecurringCard: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
-                        .disabled(!payment.isActive || status == .paid)
+                        .disabled(!payment.isActive || status == .paid || isEnded)
                     }
 
-                    if payment.isActive && (status == .scheduled || status == .partial) {
+                    if payment.isActive && !isEnded && (status == .scheduled || status == .partial) {
                         Button {
                             partialAmount = ""
                             showPartial = true
@@ -463,7 +513,7 @@ private struct RecurringCard: View {
                         .controlSize(.small)
                     }
 
-                    if status == .scheduled && payment.isActive {
+                    if status == .scheduled && payment.isActive && !isEnded {
                         Menu {
                             Button("Пропустить месяц", systemImage: "forward.fill") {
                                 do {

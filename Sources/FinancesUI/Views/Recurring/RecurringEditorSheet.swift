@@ -7,11 +7,14 @@ struct RecurringEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let existing: RecurringPayment?
+    let detail: RecurringDetail?
+    @Query private var changes: [RecurringPriceChange]
     @State private var draft: RecurringDraft
 
-    init(existing: RecurringPayment?) {
+    init(existing: RecurringPayment?, detail: RecurringDetail?) {
         self.existing = existing
-        _draft = State(initialValue: RecurringDraft(payment: existing))
+        self.detail = detail
+        _draft = State(initialValue: RecurringDraft(payment: existing, detail: detail))
     }
 
     private var payable: Double {
@@ -35,6 +38,8 @@ struct RecurringEditorSheet: View {
             ?? InputValidation.amountError(draft.baseAmount)
             ?? InputValidation.roundingStepError(draft.roundingStep)
             ?? InputValidation.startDateError(draft.startDate)
+            ?? (draft.hasEndDate && draft.endDate < draft.startDate
+                ? "Дата окончания не может быть раньше первого платежа." : nil)
             ?? InputValidation.noteError(draft.note)
     }
 
@@ -85,6 +90,11 @@ struct RecurringEditorSheet: View {
                     }
 
                     DatePicker("Первый платёж", selection: $draft.startDate, displayedComponents: .date)
+
+                    Toggle("Указать дату окончания", isOn: $draft.hasEndDate)
+                    if draft.hasEndDate {
+                        DatePicker("Последний месяц", selection: $draft.endDate, displayedComponents: .date)
+                    }
 
                     Toggle("Платёж активен", isOn: $draft.isActive)
                 }
@@ -180,14 +190,16 @@ struct RecurringEditorSheet: View {
             }
             .padding(16)
         }
-        .frame(width: 500, height: 700)
+        .frame(width: 500, height: 780)
     }
 
     private func save() {
         guard validationMessage == nil else { return }
         let title = draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
+            let payment: RecurringPayment
             if let existing {
+                let oldAmount = existing.baseAmount
                 existing.title = title
                 existing.category = draft.category
                 existing.baseAmount = draft.baseAmount
@@ -198,21 +210,48 @@ struct RecurringEditorSheet: View {
                 existing.startDate = draft.startDate.startOfDay
                 existing.isActive = draft.isActive
                 existing.note = draft.note
+                payment = existing
+
+                if abs(oldAmount - draft.baseAmount) >= 0.005 {
+                    RecurringDetailService.recordPriceChange(
+                        for: existing,
+                        amount: draft.baseAmount,
+                        changes: changes,
+                        context: context
+                    )
+                }
             } else {
-                context.insert(
-                    RecurringPayment(
-                        title: title,
-                        category: draft.category,
-                        baseAmount: draft.baseAmount,
-                        rounding: draft.rounding,
-                        roundingStep: draft.roundingStep,
-                        frequency: draft.frequency,
-                        dayOfMonth: draft.dayOfMonth,
-                        startDate: draft.startDate,
-                        isActive: draft.isActive,
-                        note: draft.note
-                    ))
+                let created = RecurringPayment(
+                    title: title,
+                    category: draft.category,
+                    baseAmount: draft.baseAmount,
+                    rounding: draft.rounding,
+                    roundingStep: draft.roundingStep,
+                    frequency: draft.frequency,
+                    dayOfMonth: draft.dayOfMonth,
+                    startDate: draft.startDate,
+                    isActive: draft.isActive,
+                    note: draft.note
+                )
+                context.insert(created)
+                payment = created
             }
+
+            if draft.hasEndDate || draft.autoPay || detail != nil {
+                if let detail {
+                    detail.endDate = draft.hasEndDate ? draft.endDate.startOfDay : nil
+                    detail.autoPay = draft.autoPay
+                } else {
+                    context.insert(
+                        RecurringDetail(
+                            payment: payment,
+                            endDate: draft.hasEndDate ? draft.endDate.startOfDay : nil,
+                            autoPay: draft.autoPay
+                        )
+                    )
+                }
+            }
+
             try Persistence.save(context, operation: "recurring.save")
             dismiss()
         } catch {
@@ -230,10 +269,13 @@ private struct RecurringDraft {
     var frequency: PaymentFrequency = .monthly
     var dayOfMonth: Int = 10
     var startDate: Date = .now
+    var hasEndDate: Bool = false
+    var endDate: Date = Date().addingMonths(12)
+    var autoPay: Bool = false
     var isActive: Bool = true
     var note: String = ""
 
-    init(payment: RecurringPayment?) {
+    init(payment: RecurringPayment?, detail: RecurringDetail?) {
         guard let payment else { return }
         title = payment.title
         category = payment.category
@@ -243,6 +285,9 @@ private struct RecurringDraft {
         frequency = payment.frequency
         dayOfMonth = payment.dayOfMonth
         startDate = payment.startDate
+        hasEndDate = detail?.endDate != nil
+        endDate = detail?.endDate ?? Date().addingMonths(12)
+        autoPay = detail?.autoPay ?? false
         isActive = payment.isActive
         note = payment.note
     }

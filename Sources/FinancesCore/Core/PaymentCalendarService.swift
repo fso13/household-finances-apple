@@ -26,11 +26,12 @@ package enum PaymentCalendarService {
         periods: [PaymentPeriod],
         expenses: [ExpenseEntry],
         month: Date,
+        details: [RecurringDetail] = [],
         now: Date = Date()
     ) -> [UpcomingPayment] {
         var result: [UpcomingPayment] = []
 
-        for payment in payments where PaymentPeriodService.isActive(payment, in: month) {
+        for payment in payments where RecurringDetailService.isActive(payment, in: month, details: details) {
             let due = PaymentPeriodService.dueDate(for: payment, month: month)
             guard due.isSameMonth(as: month) else { continue }
             let status = PaymentPeriodService.status(
