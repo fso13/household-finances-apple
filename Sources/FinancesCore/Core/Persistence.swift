@@ -9,8 +9,12 @@ package enum StoreLocation {
             .appendingPathComponent("Finances", isDirectory: true)
     }
 
-    package static var storeURL: URL {
+    package static var legacyStoreURL: URL {
         folder.appendingPathComponent("Finances.store")
+    }
+
+    package static var storeURL: URL {
+        folder.appendingPathComponent("FinancesV2.store")
     }
 
     package static var backupsFolder: URL {

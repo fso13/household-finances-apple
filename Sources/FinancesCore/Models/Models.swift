@@ -1,11 +1,28 @@
 import Foundation
 import SwiftData
 
+// MARK: - Деньги
+
+package enum Money {
+    /// Верхняя граница для защиты от переполнения Int.
+    private static let maxAmount: Double = 1_000_000_000_000
+
+    package static func kopecks(from value: Double) -> Int {
+        guard value.isFinite else { return 0 }
+        let clamped = min(max(value, -maxAmount), maxAmount)
+        return Int((clamped * 100).rounded())
+    }
+
+    package static func amount(from kopecks: Int) -> Double {
+        Double(kopecks) / 100
+    }
+}
+
 // MARK: - Доход / выплата
 
 @Model
 package final class IncomeEntry {
-    package var amount: Double = 0
+    package var amountKopecks: Int = 0
     package var date: Date = Date()
     package var typeRaw: String = IncomeType.salary.rawValue
     package var employer: String = ""
@@ -18,11 +35,16 @@ package final class IncomeEntry {
         employer: String = "",
         note: String = ""
     ) {
-        self.amount = amount
+        self.amountKopecks = Money.kopecks(from: amount)
         self.date = date.startOfDay
         self.typeRaw = type.rawValue
         self.employer = employer
         self.note = note
+    }
+
+    package var amount: Double {
+        get { Money.amount(from: amountKopecks) }
+        set { amountKopecks = Money.kopecks(from: newValue) }
     }
 
     package var type: IncomeType {
@@ -35,7 +57,7 @@ package final class IncomeEntry {
 
 @Model
 package final class ExpenseEntry {
-    package var amount: Double = 0
+    package var amountKopecks: Int = 0
     package var date: Date = Date()
     package var categoryRaw: String = ExpenseCategory.other.rawValue
     package var note: String = ""
@@ -46,10 +68,15 @@ package final class ExpenseEntry {
         category: ExpenseCategory = .other,
         note: String = ""
     ) {
-        self.amount = amount
+        self.amountKopecks = Money.kopecks(from: amount)
         self.date = date.startOfDay
         self.categoryRaw = category.rawValue
         self.note = note
+    }
+
+    package var amount: Double {
+        get { Money.amount(from: amountKopecks) }
+        set { amountKopecks = Money.kopecks(from: newValue) }
     }
 
     package var category: ExpenseCategory {
@@ -64,9 +91,9 @@ package final class ExpenseEntry {
 package final class RecurringPayment {
     package var title: String = ""
     package var categoryRaw: String = ExpenseCategory.rent.rawValue
-    package var baseAmount: Double = 0
+    package var baseAmountKopecks: Int = 0
     package var roundingRaw: String = RoundingRule.none.rawValue
-    package var roundingStep: Double = 100
+    package var roundingStepKopecks: Int = 100_00
     package var frequencyRaw: String = PaymentFrequency.monthly.rawValue
     package var dayOfMonth: Int = 10
     package var startDate: Date = Date()
@@ -87,14 +114,24 @@ package final class RecurringPayment {
     ) {
         self.title = title
         self.categoryRaw = category.rawValue
-        self.baseAmount = baseAmount
+        self.baseAmountKopecks = Money.kopecks(from: baseAmount)
         self.roundingRaw = rounding.rawValue
-        self.roundingStep = roundingStep
+        self.roundingStepKopecks = Money.kopecks(from: roundingStep)
         self.frequencyRaw = frequency.rawValue
         self.dayOfMonth = dayOfMonth
         self.startDate = startDate.startOfDay
         self.isActive = isActive
         self.note = note
+    }
+
+    package var baseAmount: Double {
+        get { Money.amount(from: baseAmountKopecks) }
+        set { baseAmountKopecks = Money.kopecks(from: newValue) }
+    }
+
+    package var roundingStep: Double {
+        get { Money.amount(from: roundingStepKopecks) }
+        set { roundingStepKopecks = Money.kopecks(from: newValue) }
     }
 
     package var category: ExpenseCategory {
@@ -158,7 +195,7 @@ package final class RecurringPayment {
 @Model
 package final class Subscription {
     package var name: String = ""
-    package var amount: Double = 0
+    package var amountKopecks: Int = 0
     package var cycleRaw: String = SubscriptionCycle.monthly.rawValue
     package var startDate: Date = Date()
     package var isActive: Bool = true
@@ -177,13 +214,18 @@ package final class Subscription {
         tint: TintColor = .purple
     ) {
         self.name = name
-        self.amount = amount
+        self.amountKopecks = Money.kopecks(from: amount)
         self.cycleRaw = cycle.rawValue
         self.startDate = startDate.startOfDay
         self.isActive = isActive
         self.note = note
         self.icon = icon
         self.tintRaw = tint.rawValue
+    }
+
+    package var amount: Double {
+        get { Money.amount(from: amountKopecks) }
+        set { amountKopecks = Money.kopecks(from: newValue) }
     }
 
     package var cycle: SubscriptionCycle {

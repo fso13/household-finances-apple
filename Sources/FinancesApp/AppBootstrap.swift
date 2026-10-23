@@ -1,5 +1,6 @@
 import AppKit
 import FinancesCore
+import FinancesLegacy
 import SwiftData
 import SwiftUI
 
@@ -17,8 +18,26 @@ final class AppBootstrap: ObservableObject {
     func load() {
         do {
             try StoreLocation.prepareFolder()
-            let schema = Schema(versionedSchema: FinancesSchemaV1.self)
-            let configuration = ModelConfiguration("Finances", schema: schema, url: StoreLocation.storeURL)
+
+            do {
+                let migrated = try LegacyMigration.migrateIfNeeded(
+                    legacyURL: StoreLocation.legacyStoreURL,
+                    newURL: StoreLocation.storeURL
+                )
+                if migrated {
+                    AppLog.storage.info("V1 data migrated to kopeck store")
+                }
+            } catch {
+                AppLog.storage.error(
+                    "V1 migration failed: \(error.localizedDescription, privacy: .public)"
+                )
+                container = nil
+                self.error = .migrationFailed
+                return
+            }
+
+            let schema = Schema(versionedSchema: FinancesSchemaV2.self)
+            let configuration = ModelConfiguration("FinancesV2", schema: schema, url: StoreLocation.storeURL)
             let newContainer = try ModelContainer(
                 for: schema,
                 migrationPlan: FinancesMigrationPlan.self,
@@ -61,6 +80,10 @@ final class AppBootstrap: ObservableObject {
         do {
             try StoreLocation.prepareFolder()
             try backupCurrentStore()
+            try LegacyMigration.archiveLegacyStore(
+                legacyURL: StoreLocation.legacyStoreURL,
+                backupFolder: StoreLocation.backupsFolder
+            )
             try removeStoreFiles()
             load()
         } catch {

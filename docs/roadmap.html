@@ -113,7 +113,7 @@
 
           <article class="timeline-item">
             <div class="timeline-meta">
-              <span class="badge badge-next">в работе</span>
+              <span class="badge badge-now">готово</span>
               <span>2–6 недель</span>
             </div>
             <h2>v1.1 — Данные и доверие</h2>
@@ -122,13 +122,13 @@
               <li>JSON-бэкап и восстановление</li>
               <li>Мастер импорта CSV с маппингом колонок</li>
               <li>Автобэкапы перед очисткой и импортом</li>
-              <li>Схема V1; V2 и копейки — следующий шаг</li>
+              <li>Копейки и миграция схемы V2</li>
             </ul>
           </article>
 
           <article class="timeline-item">
             <div class="timeline-meta">
-              <span class="badge badge-later">запланировано</span>
+              <span class="badge badge-next">следующий</span>
               <span>6–10 недель</span>
             </div>
             <h2>v1.2 — Планирование</h2>
@@ -213,13 +213,13 @@
 
         <div class="debt-grid">
           <article class="debt">
-            <div class="debt-head"><h3>Деньги в Double</h3><span class="pill">P0 · M</span></div>
-            <p>Копейки теряются на средних и округлениях. Переход на целые копейки требует схемы V2.</p>
+            <div class="debt-head"><h3>Агрегаты на Double</h3><span class="pill">P1 · M</span></div>
+            <p>Деньги хранятся в копейках, но средние и суммы всё ещё считаются через Double. Нужен Decimal-слой.</p>
           </article>
 
           <article class="debt">
-            <div class="debt-head"><h3>Схема V2 и миграция</h3><span class="pill">P0 · M</span></div>
-            <p>V1 и план миграций готовы, но изменение денежных полей ещё не выпущено.</p>
+            <div class="debt-head"><h3>Старый store рядом</h3><span class="pill">P2 · S</span></div>
+            <p>После миграции V1-файл остаётся резервной копией. Нужна политика очистки и напоминание.</p>
           </article>
 
           <article class="debt">
@@ -277,7 +277,7 @@
                 <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/17">17</a></td><td>Валидация сумм и дат</td><td>ui · P1</td><td>готово</td></tr>
                 <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/18">18</a></td><td>Детерминированные демо-данные</td><td>testing · P1</td><td>готово</td></tr>
                 <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/11">11</a></td><td>VersionedSchema V1 и план миграций</td><td>core · P0</td><td>готово</td></tr>
-                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/12">12</a></td><td>Деньги в копейках и схема V2</td><td>core · P0</td><td>запланировано</td></tr>
+                <tr><td><a href="https://github.com/fso13/household-finances-apple/issues/12">12</a></td><td>Деньги в копейках и схема V2</td><td>core · P0</td><td>готово</td></tr>
               </tbody>
             </table>
           </div>

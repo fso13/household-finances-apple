@@ -2,9 +2,9 @@ import SwiftData
 
 // MARK: - Версия схемы
 
-package enum FinancesSchemaV1: VersionedSchema {
+package enum FinancesSchemaV2: VersionedSchema {
     package static var versionIdentifier: Schema.Version {
-        Schema.Version(1, 0, 0)
+        Schema.Version(2, 0, 0)
     }
 
     package static var models: [any PersistentModel.Type] {
@@ -19,7 +19,7 @@ package enum FinancesSchemaV1: VersionedSchema {
 
 package enum FinancesMigrationPlan: SchemaMigrationPlan {
     package static var schemas: [any VersionedSchema.Type] {
-        [FinancesSchemaV1.self]
+        [FinancesSchemaV2.self]
     }
 
     package static var stages: [MigrationStage] {

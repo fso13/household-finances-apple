@@ -2,26 +2,30 @@
 
 Все заметные изменения проекта. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версии — [SemVer](https://semver.org/lang/ru/).
 
-## [Unreleased] — v1.1
+## [1.1.0] — 2026-10-23
 
 ### Добавлено
 
 - JSON-бэкап и восстановление с предпросмотром, режимами «заменить» и «объединить».
 - Автоматические бэкапы перед очисткой, заменой демо-данных, восстановлением и импортом.
 - Импорт CSV с автоматическим распознаванием колонок и предпросмотром.
-- Машиночитаемый CSV: ISO-даты, точка в десятичных числах.
+- Машиночитаемый CSV: ISO-даты, точка в десятичных числах, отдельный работодатель.
 - Валидация сумм, дат, названий и комментариев в редакторах.
 - Детерминированные демо-данные через `referenceDate`.
-- `FinancesSchemaV1` и `SchemaMigrationPlan` как основа будущих миграций.
+- Деньги в целых копейках (`amountKopecks`, `baseAmountKopecks`, `roundingStepKopecks`).
+- `FinancesSchemaV2` и одноразовая миграция старого V1-store через `FinancesLegacy`.
+- 62 unit-теста, включая миграцию, деньги, бэкапы, CSV и валидацию.
 
 ### Изменено
 
 - CSV-экспорт переведён на общий `CSVCodec`.
-- Экран настроек дополнен разделом резервных копий.
+- Экран настроек дополнен резервными копиями и импортом CSV.
+- Новый store: `FinancesV2.store`; старый `Finances.store` остаётся резервной копией.
 
-### Осталось
+### Исправлено
 
-- Переход денег с `Double` на целые копейки и схема V2 (issue #12).
+- Накопление ошибок округления при хранении денег.
+- Повторный запуск миграции после сброса: старый store архивируется в `Backups/Legacy-…`.
 
 ## [1.0.1] — 2026-10-23
 
@@ -56,6 +60,7 @@
 - Светлая и тёмная темы, русская локализация, локальное хранение.
 - Иконка приложения, скрипты сборки и документация.
 
-[Unreleased]: https://github.com/fso13/household-finances-apple/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/fso13/household-finances-apple/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/fso13/household-finances-apple/releases/tag/v1.1.0
 [1.0.1]: https://github.com/fso13/household-finances-apple/releases/tag/v1.0.1
 [1.0.0]: https://github.com/fso13/household-finances-apple/releases/tag/v1.0.0

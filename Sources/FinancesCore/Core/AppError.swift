@@ -4,6 +4,7 @@ import Foundation
 
 package enum AppError: LocalizedError, Identifiable, Sendable {
     case storageUnavailable
+    case migrationFailed
     case saveFailed
     case deleteFailed
     case exportFailed
@@ -13,6 +14,7 @@ package enum AppError: LocalizedError, Identifiable, Sendable {
     package var id: String {
         switch self {
         case .storageUnavailable: "storageUnavailable"
+        case .migrationFailed: "migrationFailed"
         case .saveFailed: "saveFailed"
         case .deleteFailed: "deleteFailed"
         case .exportFailed: "exportFailed"
@@ -25,6 +27,8 @@ package enum AppError: LocalizedError, Identifiable, Sendable {
         switch self {
         case .storageUnavailable:
             "Не удалось открыть локальное хранилище."
+        case .migrationFailed:
+            "Не удалось перенести данные из предыдущей версии."
         case .saveFailed:
             "Не удалось сохранить изменения."
         case .deleteFailed:
@@ -42,6 +46,8 @@ package enum AppError: LocalizedError, Identifiable, Sendable {
         switch self {
         case .storageUnavailable:
             "Откройте папку данных, сделайте копию store и попробуйте восстановить базу. Если не помогает — создайте новую базу: повреждённый файл будет сохранён рядом."
+        case .migrationFailed:
+            "Старый файл Finances.store не изменён. Откройте папку данных, сделайте копию и повторите запуск. Если не помогает — создайте новую базу и восстановите JSON-бэкап."
         case .saveFailed, .deleteFailed:
             "Попробуйте ещё раз. Если ошибка повторяется, проверьте свободное место на диске и права на папку данных."
         case .exportFailed:

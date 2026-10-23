@@ -19,15 +19,21 @@ let package = Package(
             path: "Sources/FinancesUI",
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
+        .target(
+            name: "FinancesLegacy",
+            dependencies: ["FinancesCore"],
+            path: "Sources/FinancesLegacy",
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
         .executableTarget(
             name: "FinancesApp",
-            dependencies: ["FinancesCore", "FinancesUI"],
+            dependencies: ["FinancesCore", "FinancesUI", "FinancesLegacy"],
             path: "Sources/FinancesApp",
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(
             name: "FinancesCoreTests",
-            dependencies: ["FinancesCore"],
+            dependencies: ["FinancesCore", "FinancesLegacy"],
             path: "Tests/FinancesCoreTests",
             swiftSettings: [.swiftLanguageMode(.v5)]
         )
