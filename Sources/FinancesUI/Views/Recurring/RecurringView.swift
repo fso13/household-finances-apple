@@ -89,6 +89,9 @@ struct RecurringView: View {
             .padding(20)
         }
         .navigationTitle("Обязательные платежи")
+        .onAppear {
+            PaymentReminderService.scheduleIfNeeded(payments: payments, subscriptions: subscriptions)
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {

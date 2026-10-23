@@ -11,6 +11,7 @@ struct SettingsView: View {
     @Query private var subscriptions: [Subscription]
 
     @AppStorage("budgetNotificationsEnabled") private var budgetNotificationsEnabled = true
+    @AppStorage("paymentRemindersEnabled") private var paymentRemindersEnabled = true
     @State private var confirmLoadDemo = false
     @State private var confirmClear = false
     @State private var activeSheet: SettingsSheet?
@@ -186,8 +187,15 @@ struct SettingsView: View {
                         }
                     }
 
+                Toggle("Напоминать о платежах за 7 дней", isOn: $paymentRemindersEnabled)
+                    .onChange(of: paymentRemindersEnabled) { _, enabled in
+                        if enabled {
+                            PaymentReminderService.requestAuthorization()
+                        }
+                    }
+
                 Text(
-                    "Уведомление приходит один раз для каждой категории и месяца. Разрешение запрашивается при первом превышении."
+                    "Бюджетное уведомление приходит один раз для каждой категории и месяца. Напоминания о платежах ставятся на 9:00 за 7 дней до списания."
                 )
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
