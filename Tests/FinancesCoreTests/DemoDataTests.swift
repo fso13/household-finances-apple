@@ -16,6 +16,7 @@ final class DemoDataTests: XCTestCase {
             PaymentPeriod.self,
             RecurringDetail.self,
             RecurringPriceChange.self,
+            ApartmentMonth.self,
             configurations: configuration
         )
         return ModelContext(container)

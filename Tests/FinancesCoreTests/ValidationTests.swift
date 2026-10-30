@@ -40,9 +40,9 @@ final class ValidationTests: XCTestCase {
     }
 
     func testSchemaVersion() {
-        XCTAssertEqual(FinancesSchemaV6.versionIdentifier, Schema.Version(6, 0, 0))
-        XCTAssertEqual(FinancesSchemaV6.models.count, 9)
-        XCTAssertEqual(FinancesMigrationPlan.schemas.count, 5)
-        XCTAssertEqual(FinancesMigrationPlan.stages.count, 4)
+        XCTAssertEqual(FinancesSchemaV7.versionIdentifier, Schema.Version(7, 0, 0))
+        XCTAssertEqual(FinancesSchemaV7.models.count, 10)
+        XCTAssertEqual(FinancesMigrationPlan.schemas.count, 6)
+        XCTAssertEqual(FinancesMigrationPlan.stages.count, 5)
     }
 }

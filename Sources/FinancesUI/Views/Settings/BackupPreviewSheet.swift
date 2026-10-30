@@ -43,6 +43,7 @@ struct BackupPreviewSheet: View {
                     backupRow("История сумм", envelope.data.priceChanges?.count ?? 0)
                     backupRow("Правила категоризации", envelope.data.categoryRules?.count ?? 0)
                     backupRow("Настройки", envelope.data.settings?.count ?? 0)
+                    backupRow("Квартира", envelope.data.apartmentMonths?.count ?? 0)
                     HStack {
                         Text("Версия")
                             .foregroundStyle(.secondary)

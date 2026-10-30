@@ -16,6 +16,7 @@ final class BackupTests: XCTestCase {
             PaymentPeriod.self,
             RecurringDetail.self,
             RecurringPriceChange.self,
+            ApartmentMonth.self,
             configurations: configuration
         )
         return ModelContext(container)
@@ -91,6 +92,19 @@ final class BackupTests: XCTestCase {
                 ],
                 settings: [
                     "dashboard.showCharts": "0"
+                ],
+                apartmentMonths: [
+                    ApartmentMonthBackup(
+                        ApartmentMonth(
+                            year: 2026,
+                            month: 10,
+                            rent: 35_000,
+                            capitalRepair: 611.89,
+                            utilities: 5_181.34,
+                            electricity: 1_809.31,
+                            paid: 42_600
+                        )
+                    )
                 ]
             )
         )
@@ -137,7 +151,7 @@ final class BackupTests: XCTestCase {
                 .appendingPathComponent("finances-backup-tests-\(UUID().uuidString)")
         )
 
-        XCTAssertEqual(summary.inserted, 9)
+        XCTAssertEqual(summary.inserted, 10)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<IncomeEntry>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<ExpenseEntry>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<RecurringPayment>()), 1)
@@ -148,6 +162,7 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<RecurringDetail>()), 1)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<RecurringPriceChange>()), 1)
         XCTAssertEqual(CategoryRuleCatalog.shared.rules.count, 1)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<ApartmentMonth>()), 1)
         XCTAssertEqual(UserDefaults.standard.bool(forKey: "dashboard.showCharts"), false)
         XCTAssertEqual(CustomCategoryCatalog.shared.categories.count, 1)
     }
@@ -168,9 +183,9 @@ final class BackupTests: XCTestCase {
             automaticBackupFolder: FileManager.default.temporaryDirectory
         )
 
-        XCTAssertEqual(first.inserted, 9)
+        XCTAssertEqual(first.inserted, 10)
         XCTAssertEqual(second.inserted, 0)
-        XCTAssertEqual(second.skipped, 9)
+        XCTAssertEqual(second.skipped, 10)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<IncomeEntry>()), 1)
     }
 

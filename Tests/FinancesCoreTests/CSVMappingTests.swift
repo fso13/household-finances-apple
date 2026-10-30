@@ -125,6 +125,7 @@ final class CSVMappingTests: XCTestCase {
             PaymentPeriod.self,
             RecurringDetail.self,
             RecurringPriceChange.self,
+            ApartmentMonth.self,
             configurations: configuration
         )
         let context = ModelContext(container)

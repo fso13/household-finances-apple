@@ -8,6 +8,7 @@ package enum AppRoute: String, CaseIterable, Identifiable, Hashable {
     case expenses
     case budgets
     case goals
+    case apartment
     case recurring
     case subscriptions
     case analytics
@@ -22,6 +23,7 @@ package enum AppRoute: String, CaseIterable, Identifiable, Hashable {
         case .expenses: "Расходы"
         case .budgets: "Бюджеты"
         case .goals: "Цели"
+        case .apartment: "Квартира"
         case .recurring: "Обязательные"
         case .subscriptions: "Подписки"
         case .analytics: "Аналитика"
@@ -36,6 +38,7 @@ package enum AppRoute: String, CaseIterable, Identifiable, Hashable {
         case .expenses: "arrow.up.circle.fill"
         case .budgets: "target"
         case .goals: "flag.checkered"
+        case .apartment: "building.2.fill"
         case .recurring: "calendar.badge.clock"
         case .subscriptions: "repeat.circle.fill"
         case .analytics: "chart.pie.fill"
@@ -50,6 +53,7 @@ package enum AppRoute: String, CaseIterable, Identifiable, Hashable {
         case .expenses: .orange
         case .budgets: .green
         case .goals: .pink
+        case .apartment: .blue
         case .recurring: .blue
         case .subscriptions: .purple
         case .analytics: .teal

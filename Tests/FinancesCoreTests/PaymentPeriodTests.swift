@@ -16,6 +16,7 @@ final class PaymentPeriodTests: XCTestCase {
             PaymentPeriod.self,
             RecurringDetail.self,
             RecurringPriceChange.self,
+            ApartmentMonth.self,
             configurations: configuration
         )
         return ModelContext(container)

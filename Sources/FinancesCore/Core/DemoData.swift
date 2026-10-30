@@ -356,6 +356,7 @@ package enum DemoData {
         try deleteAll(PaymentPeriod.self, context: context)
         try deleteAll(RecurringDetail.self, context: context)
         try deleteAll(RecurringPriceChange.self, context: context)
+        try deleteAll(ApartmentMonth.self, context: context)
         CustomCategoryCatalog.shared.replaceAll([])
         CategoryRuleCatalog.shared.replaceAll([])
         try Persistence.save(context, operation: "demo.clear")

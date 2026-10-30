@@ -62,6 +62,7 @@ package enum BackupCodec {
             )
             let categoryRules = CategoryRuleCatalog.shared.rules
             let settings = backupSettings()
+            let apartmentMonths = try context.fetch(FetchDescriptor<ApartmentMonth>())
 
             return BackupEnvelope(
                 appVersion: appVersion,
@@ -78,7 +79,8 @@ package enum BackupCodec {
                     recurringDetails: details.map(RecurringDetailBackup.init),
                     priceChanges: priceChanges.map(RecurringPriceChangeBackup.init),
                     categoryRules: categoryRules,
-                    settings: settings
+                    settings: settings,
+                    apartmentMonths: apartmentMonths.map(ApartmentMonthBackup.init)
                 )
             )
         } catch {
@@ -138,6 +140,7 @@ package enum BackupCodec {
         let existingPeriods = try context.fetch(FetchDescriptor<PaymentPeriod>())
         let existingDetails = try context.fetch(FetchDescriptor<RecurringDetail>())
         let existingPriceChanges = try context.fetch(FetchDescriptor<RecurringPriceChange>())
+        let existingApartmentMonths = try context.fetch(FetchDescriptor<ApartmentMonth>())
 
         var incomeKeys = Set(existingIncomes.map { incomeKey($0) })
         var expenseKeys = Set(existingExpenses.map { expenseKey($0) })
@@ -148,6 +151,7 @@ package enum BackupCodec {
         var periodKeys = Set(existingPeriods.map { periodKey($0) })
         var detailKeys = Set(existingDetails.map { $0.recurringKey })
         var priceKeys = Set(existingPriceChanges.map { priceChangeKey($0) })
+        var apartmentKeys = Set(existingApartmentMonths.map { "\($0.year)|\($0.month)" })
 
         var summary = RestoreSummary(mode: mode)
 
@@ -231,6 +235,27 @@ package enum BackupCodec {
                 )
             )
             periodKeys.insert(key)
+            summary.inserted += 1
+        }
+
+        for item in envelope.data.apartmentMonths ?? [] {
+            let key = "\(item.year)|\(item.month)"
+            guard mode == .replace || !apartmentKeys.contains(key) else {
+                summary.skipped += 1
+                continue
+            }
+            context.insert(
+                ApartmentMonth(
+                    year: item.year,
+                    month: item.month,
+                    rent: item.rent,
+                    capitalRepair: item.capitalRepair,
+                    utilities: item.utilities,
+                    electricity: item.electricity,
+                    paid: item.paid
+                )
+            )
+            apartmentKeys.insert(key)
             summary.inserted += 1
         }
 

@@ -21,7 +21,7 @@ package enum FinancesMigrationPlan: SchemaMigrationPlan {
     package static var schemas: [any VersionedSchema.Type] {
         [
             FinancesSchemaV2.self, FinancesSchemaV3.self, FinancesSchemaV4.self, FinancesSchemaV5.self,
-            FinancesSchemaV6.self,
+            FinancesSchemaV6.self, FinancesSchemaV7.self,
         ]
     }
 
@@ -31,6 +31,7 @@ package enum FinancesMigrationPlan: SchemaMigrationPlan {
             .lightweight(fromVersion: FinancesSchemaV3.self, toVersion: FinancesSchemaV4.self),
             .lightweight(fromVersion: FinancesSchemaV4.self, toVersion: FinancesSchemaV5.self),
             .lightweight(fromVersion: FinancesSchemaV5.self, toVersion: FinancesSchemaV6.self),
+            .lightweight(fromVersion: FinancesSchemaV6.self, toVersion: FinancesSchemaV7.self),
         ]
     }
 }
