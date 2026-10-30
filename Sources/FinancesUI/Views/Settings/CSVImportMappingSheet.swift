@@ -82,6 +82,17 @@ struct CSVImportMappingSheet: View {
                 Section("Служебное") {
                     columnPicker("Статус операции", selection: $mapping.status)
                     Toggle("Пропускать переводы между счетами", isOn: $mapping.skipTransfers)
+                    if mapping.skipTransfers {
+                        TextField(
+                            "Игнорировать, если содержит",
+                            text: $mapping.ignoreKeywords,
+                            axis: .vertical
+                        )
+                        .lineLimit(2...3)
+                        Text("Слова через запятую. Например: между счетами, перевод с карты.")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
 
                 if !sampleRows.isEmpty {

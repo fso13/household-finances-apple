@@ -74,6 +74,27 @@ final class CSVMappingTests: XCTestCase {
         XCTAssertEqual(preview.errors.count, 0)
     }
 
+    func testCustomIgnoreKeyword() throws {
+        let table = CSVTable(
+            name: "custom.csv",
+            allRows: [
+                ["28.10.2026", "-500,0", "Перевод на свой счёт"],
+                ["27.10.2026", "-250,0", "OZON"],
+            ]
+        )
+        var mapping = CSVColumnMapping()
+        mapping.hasHeader = false
+        mapping.kind = .expense
+        mapping.expense = CSVFieldMapping(
+            date: 0, amount: 1, type: nil, employer: nil, category: nil, note: 2
+        )
+        mapping.ignoreKeywords = "свой счёт"
+
+        let preview = try CSVColumnImporter.preview(table: table, mapping: mapping)
+        XCTAssertEqual(preview.expenses.count, 1)
+        XCTAssertEqual(preview.skippedSections, 1)
+    }
+
     func testDateWithTimeIsParsed() {
         let date = CSVCodec.parseDate("28.10.2026 23:56")
         XCTAssertNotNil(date)

@@ -69,6 +69,8 @@ package struct CSVColumnMapping: Equatable, Sendable {
     package var direction: Int?
     package var status: Int?
     package var skipTransfers: Bool = true
+    package var ignoreKeywords: String =
+        "между счетами, перевод между, внутренний перевод, перевод с карты, перевод на карту, собственный счет, свой счет"
 
     package static func automatic(headers: [String]) -> CSVColumnMapping {
         let normalized = headers.map {
@@ -205,10 +207,16 @@ package enum CSVColumnImporter {
             let transferText = [note, categoryText, typeText, directionText]
                 .joined(separator: " ")
                 .lowercased()
+            let ignored = mapping.ignoreKeywords
+                .split(separator: ",")
+                .map {
+                    $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                        .replacingOccurrences(of: "ё", with: "е")
+                        .lowercased()
+                }
+                .filter { !$0.isEmpty }
             if mapping.skipTransfers,
-                categoryText.lowercased().contains("между счетами")
-                    || transferText.contains("перевод между")
-                    || transferText.contains("внутренний перевод")
+                ignored.contains(where: { transferText.replacingOccurrences(of: "ё", with: "е").contains($0) })
             {
                 skippedSections += 1
                 continue
