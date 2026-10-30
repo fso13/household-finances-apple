@@ -31,7 +31,7 @@ struct CSVImportMappingSheet: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Маппинг колонок CSV")
                         .font(.title3.weight(.semibold))
-                    Text("\(table.name) · \(table.rows.count) строк · первая строка — заголовки")
+                    Text("\(table.name) · \(mapping.hasHeader ? table.rowCount : table.allRows.count) строк")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -41,45 +41,62 @@ struct CSVImportMappingSheet: View {
                 }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
+                .disabled(!mapping.hasHeader)
             }
             .padding(18)
 
             Divider()
 
             Form {
-                Section("Обязательные колонки") {
-                    columnPicker("Дата", selection: $mapping.date)
-                    columnPicker("Сумма", selection: $mapping.amount)
-                    columnPicker("Списание/Зачисление", selection: $mapping.direction)
+                Section("Файл") {
+                    Toggle("Первая строка — шапка", isOn: $mapping.hasHeader)
+                    Picker("Что импортировать", selection: $mapping.kind) {
+                        ForEach(CSVImportKind.allCases) { kind in
+                            Text(kind.title).tag(kind)
+                        }
+                    }
+                    if mapping.kind == .mixed {
+                        columnPicker("Списание/Зачисление", selection: $mapping.direction)
+                    }
                 }
 
-                Section("Категории и описание") {
-                    columnPicker("Категория", selection: $mapping.category)
-                    columnPicker("Описание операции", selection: $mapping.description)
-                    columnPicker("Контрагент / ТСП", selection: $mapping.merchant)
-                    columnPicker("Комментарий", selection: $mapping.comment)
+                if mapping.kind == .income || mapping.kind == .mixed {
+                    Section("Доходы — 5 полей") {
+                        columnPicker("Дата", selection: $mapping.income.date)
+                        columnPicker("Сумма", selection: $mapping.income.amount)
+                        columnPicker("Тип выплаты", selection: $mapping.income.type)
+                        columnPicker("Работодатель", selection: $mapping.income.employer)
+                        columnPicker("Заметка", selection: $mapping.income.note)
+                    }
                 }
 
-                Section("Доходы и служебное") {
-                    Toggle("Пропускать переводы между счетами", isOn: $mapping.skipTransfers)
-                    columnPicker("Тип дохода", selection: $mapping.incomeType)
-                    columnPicker("Работодатель", selection: $mapping.employer)
+                if mapping.kind == .expense || mapping.kind == .mixed {
+                    Section("Расходы — 4 поля") {
+                        columnPicker("Дата", selection: $mapping.expense.date)
+                        columnPicker("Сумма", selection: $mapping.expense.amount)
+                        columnPicker("Категория", selection: $mapping.expense.category)
+                        columnPicker("Заметка", selection: $mapping.expense.note)
+                    }
+                }
+
+                Section("Служебное") {
                     columnPicker("Статус операции", selection: $mapping.status)
+                    Toggle("Пропускать переводы между счетами", isOn: $mapping.skipTransfers)
                 }
 
                 if !sampleRows.isEmpty {
                     Section("Пример строк") {
                         ForEach(Array(sampleRows.enumerated()), id: \.offset) { _, row in
                             HStack(spacing: 8) {
-                                Text(sampleValue(row, mapping.date) ?? "—")
+                                Text(sampleValue(row, mapping.income.date ?? mapping.expense.date) ?? "—")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
-                                    .frame(width: 110, alignment: .leading)
-                                Text(sampleValue(row, mapping.amount) ?? "—")
+                                    .frame(width: 105, alignment: .leading)
+                                Text(sampleValue(row, mapping.income.amount ?? mapping.expense.amount) ?? "—")
                                     .font(.caption2.weight(.semibold))
                                     .monospacedDigit()
-                                    .frame(width: 80, alignment: .trailing)
-                                Text(sampleValue(row, mapping.description) ?? sampleValue(row, mapping.merchant) ?? "—")
+                                    .frame(width: 75, alignment: .trailing)
+                                Text(sampleValue(row, mapping.income.note ?? mapping.expense.note) ?? "—")
                                     .font(.caption2)
                                     .lineLimit(1)
                                 Spacer()
@@ -98,7 +115,7 @@ struct CSVImportMappingSheet: View {
 
                 Section {
                     Text(
-                        "Выберите, какие колонки файла соответствуют дате, сумме, направлению и описанию. Настройки можно менять перед каждым импортом."
+                        "Для доходов доступны 5 полей приложения, для расходов — 4. Если шапки нет, вместо названий показываются номера колонок."
                     )
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -115,11 +132,11 @@ struct CSVImportMappingSheet: View {
                 Button("Предпросмотр") { makePreview() }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
-                    .disabled(mapping.date == nil || mapping.amount == nil)
+                    .disabled(!canPreview)
             }
             .padding(16)
         }
-        .frame(width: 640, height: 620)
+        .frame(width: 660, height: 760)
         .sheet(item: $preview) { preview in
             CSVImportPreviewSheet(
                 preview: preview,
@@ -133,17 +150,40 @@ struct CSVImportMappingSheet: View {
         }
     }
 
+    private var canPreview: Bool {
+        switch mapping.kind {
+        case .income:
+            return mapping.income.date != nil && mapping.income.amount != nil
+        case .expense:
+            return mapping.expense.date != nil && mapping.expense.amount != nil
+        case .mixed:
+            return mapping.income.date != nil && mapping.income.amount != nil
+                && mapping.expense.date != nil && mapping.expense.amount != nil
+                && mapping.direction != nil
+        }
+    }
+
     private var sampleRows: [[String]] {
-        Array(table.rows.prefix(4))
+        Array(table.dataRows(hasHeader: mapping.hasHeader).prefix(4))
     }
 
     private func columnPicker(_ title: String, selection: Binding<Int?>) -> some View {
         Picker(title, selection: selection) {
             Text("Не использовать").tag(Int?.none)
-            ForEach(table.headers.indices, id: \.self) { index in
-                Text(table.headers[index]).tag(Int?.some(index))
+            ForEach(0..<max(table.columnCount, table.headers.count), id: \.self) { index in
+                Text(columnTitle(index)).tag(Int?.some(index))
             }
         }
+    }
+
+    private func columnTitle(_ index: Int) -> String {
+        if mapping.hasHeader, table.headers.indices.contains(index) {
+            let header = table.headers[index].trimmingCharacters(in: .whitespacesAndNewlines)
+            if !header.isEmpty {
+                return header
+            }
+        }
+        return "Колонка \(index + 1)"
     }
 
     private func sampleValue(_ row: [String], _ index: Int?) -> String? {

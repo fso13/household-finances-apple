@@ -1,37 +1,72 @@
 import Foundation
 
-// MARK: - Таблица CSV и маппинг колонок
+// MARK: - Таблица CSV
 
 package struct CSVTable: Identifiable, Sendable {
     package let id = UUID()
     package let name: String
-    package let headers: [String]
-    package let rows: [[String]]
+    /// Все строки файла, включая возможную шапку.
+    package let allRows: [[String]]
 
+    package init(name: String, allRows: [[String]]) {
+        self.name = name
+        self.allRows = allRows
+    }
+
+    /// Удобный инициализатор для тестов и предпросмотра.
     package init(name: String, headers: [String], rows: [[String]]) {
         self.name = name
-        self.headers = headers
-        self.rows = rows
+        self.allRows = [headers] + rows
+    }
+
+    package var headers: [String] { allRows.first ?? [] }
+    package var columnCount: Int { allRows.map(\.count).max() ?? 0 }
+    package var rowCount: Int { max(0, allRows.count - 1) }
+
+    package func dataRows(hasHeader: Bool) -> ArraySlice<[String]> {
+        hasHeader ? allRows.dropFirst() : allRows[...]
     }
 
     package static func load(data: Data, name: String) throws -> CSVTable {
-        var parsed = try CSVCodec.parse(data)
-        guard let header = parsed.first else { throw AppError.importFailed }
-        parsed.removeFirst()
-        return CSVTable(name: name, headers: header, rows: parsed)
+        let rows = try CSVCodec.parse(data)
+        guard !rows.isEmpty else { throw AppError.importFailed }
+        return CSVTable(name: name, allRows: rows)
     }
 }
 
-package struct CSVColumnMapping: Equatable, Sendable {
+// MARK: - Маппинг полей приложения
+
+package enum CSVImportKind: String, CaseIterable, Identifiable, Sendable {
+    case income
+    case expense
+    case mixed
+
+    package var id: String { rawValue }
+    package var title: String {
+        switch self {
+        case .income: "Доходы"
+        case .expense: "Расходы"
+        case .mixed: "Доходы и расходы"
+        }
+    }
+}
+
+/// Поля приложения. Для дохода используются 5, для расхода — 4.
+package struct CSVFieldMapping: Equatable, Sendable {
     package var date: Int?
     package var amount: Int?
-    package var direction: Int?
-    package var category: Int?
-    package var description: Int?
-    package var merchant: Int?
-    package var comment: Int?
-    package var incomeType: Int?
+    package var type: Int?
     package var employer: Int?
+    package var category: Int?
+    package var note: Int?
+}
+
+package struct CSVColumnMapping: Equatable, Sendable {
+    package var hasHeader: Bool = true
+    package var kind: CSVImportKind = .mixed
+    package var income = CSVFieldMapping()
+    package var expense = CSVFieldMapping()
+    package var direction: Int?
     package var status: Int?
     package var skipTransfers: Bool = true
 
@@ -49,19 +84,40 @@ package struct CSVColumnMapping: Equatable, Sendable {
             return nil
         }
 
-        var mapping = CSVColumnMapping()
-        mapping.date = first(["дата"])
-        mapping.amount =
+        let date = first(["дата"])
+        let amount =
             normalized.firstIndex { $0.contains("сумма в валюте операции") }
             ?? first(["сумма", "amount"])
-        mapping.direction = first(["списание/зачисление", "направление", "дебет/кредит"])
-        mapping.category = first(["категория", "category"])
-        mapping.description = first(["наименование операции", "описание", "назначение"])
-        mapping.merchant = first(["наименование тсп", "контрагент", "получатель"])
-        mapping.comment = first(["комментарий", "примечание", "comment"])
-        mapping.incomeType = first(["тип операции", "тип выплаты"])
-        mapping.employer = first(["работодатель", "employer"])
-        mapping.status = first(["статус", "status"])
+        let direction = first(["списание/зачисление", "направление", "дебет/кредит"])
+        let category = first(["категория", "category"])
+        let description = first(["наименование операции", "описание", "назначение"])
+        let merchant = first(["наименование тсп", "контрагент", "получатель"])
+        let comment = first(["комментарий", "примечание", "comment"])
+        let type = first(["тип операции", "тип выплаты"])
+        let employer = first(["работодатель", "employer"])
+        let status = first(["статус", "status"])
+
+        var mapping = CSVColumnMapping()
+        mapping.hasHeader = true
+        mapping.kind = direction == nil ? .expense : .mixed
+        mapping.direction = direction
+        mapping.status = status
+        mapping.income = CSVFieldMapping(
+            date: date,
+            amount: amount,
+            type: type,
+            employer: description ?? employer,
+            category: nil,
+            note: comment ?? description
+        )
+        mapping.expense = CSVFieldMapping(
+            date: date,
+            amount: amount,
+            type: nil,
+            employer: nil,
+            category: category,
+            note: description ?? comment ?? merchant
+        )
         return mapping
     }
 }
@@ -73,8 +129,24 @@ package enum CSVColumnImporter {
         table: CSVTable,
         mapping: CSVColumnMapping
     ) throws -> CSVImportPreview {
-        guard let dateIndex = mapping.date, let amountIndex = mapping.amount else {
-            throw AppError.validation("Укажите колонки даты и суммы.")
+        switch mapping.kind {
+        case .income:
+            guard mapping.income.date != nil, mapping.income.amount != nil else {
+                throw AppError.validation("Укажите дату и сумму для доходов.")
+            }
+        case .expense:
+            guard mapping.expense.date != nil, mapping.expense.amount != nil else {
+                throw AppError.validation("Укажите дату и сумму для расходов.")
+            }
+        case .mixed:
+            guard mapping.income.date != nil, mapping.income.amount != nil,
+                mapping.expense.date != nil, mapping.expense.amount != nil
+            else {
+                throw AppError.validation("Укажите дату и сумму для доходов и расходов.")
+            }
+            guard mapping.direction != nil else {
+                throw AppError.validation("Для смешанного импорта укажите колонку «Списание/Зачисление».")
+            }
         }
 
         var incomes: [IncomeBackup] = []
@@ -83,14 +155,8 @@ package enum CSVColumnImporter {
         var errors: [String] = []
         var skippedSections = 0
 
-        for (offset, row) in table.rows.enumerated() {
-            let lineNumber = offset + 2
-            guard let dateValue = value(dateIndex, row), let date = CSVCodec.parseDate(dateValue),
-                let amountValue = value(amountIndex, row), let signedAmount = CSVCodec.parseNumber(amountValue)
-            else {
-                errors.append("Строка \(lineNumber): не удалось прочитать дату или сумму.")
-                continue
-            }
+        for (offset, row) in table.dataRows(hasHeader: mapping.hasHeader).enumerated() {
+            let lineNumber = offset + (mapping.hasHeader ? 2 : 1)
 
             if let statusIndex = mapping.status,
                 let status = value(statusIndex, row)?.lowercased(),
@@ -100,56 +166,57 @@ package enum CSVColumnImporter {
                 continue
             }
 
-            let categoryText = value(mapping.category, row)?.lowercased() ?? ""
-            let noteForTransfer = [
-                value(mapping.description, row) ?? "",
-                value(mapping.merchant, row) ?? "",
-                value(mapping.comment, row) ?? "",
-                value(mapping.incomeType, row) ?? "",
-            ].joined(separator: " ").lowercased()
-            if mapping.skipTransfers,
-                categoryText.contains("между счетами")
-                    || noteForTransfer.contains("перевод между")
-                    || noteForTransfer.contains("внутренний перевод")
-            {
-                skippedSections += 1
+            let directionText = value(mapping.direction, row)?.lowercased() ?? ""
+            let isIncome: Bool
+            switch mapping.kind {
+            case .income:
+                isIncome = true
+            case .expense:
+                isIncome = false
+            case .mixed:
+                if directionText.contains("зачисл") || directionText.contains("поступ")
+                    || directionText.contains("credit")
+                {
+                    isIncome = true
+                } else if directionText.contains("спис") || directionText.contains("дебет")
+                    || directionText.contains("debit")
+                {
+                    isIncome = false
+                } else {
+                    errors.append("Строка \(lineNumber): не удалось определить направление операции.")
+                    continue
+                }
+            }
+
+            let fields = isIncome ? mapping.income : mapping.expense
+            guard let dateValue = value(fields.date, row), let date = CSVCodec.parseDate(dateValue),
+                let amountValue = value(fields.amount, row), let signedAmount = CSVCodec.parseNumber(amountValue)
+            else {
+                errors.append("Строка \(lineNumber): не удалось прочитать дату или сумму.")
                 continue
             }
 
             let amount = abs(signedAmount)
             guard amount > 0 else { continue }
 
-            let directionText = value(mapping.direction, row)?.lowercased() ?? ""
-            let isIncome: Bool
-            if directionText.contains("зачисл") || directionText.contains("поступ")
-                || directionText.contains("credit")
+            let note = value(fields.note, row) ?? ""
+            let typeText = isIncome ? (value(fields.type, row) ?? "") : ""
+            let categoryText = isIncome ? "" : (value(fields.category, row) ?? "")
+            let transferText = [note, categoryText, typeText, directionText]
+                .joined(separator: " ")
+                .lowercased()
+            if mapping.skipTransfers,
+                categoryText.lowercased().contains("между счетами")
+                    || transferText.contains("перевод между")
+                    || transferText.contains("внутренний перевод")
             {
-                isIncome = true
-            } else if directionText.contains("спис") || directionText.contains("дебет")
-                || directionText.contains("debit")
-            {
-                isIncome = false
-            } else {
-                isIncome = signedAmount > 0
+                skippedSections += 1
+                continue
             }
 
-            let description = value(mapping.description, row) ?? ""
-            let merchant = value(mapping.merchant, row) ?? ""
-            let comment = value(mapping.comment, row) ?? ""
-            let note = [description, merchant, comment]
-                .filter { !$0.isEmpty }
-                .reduce(into: [String]()) { result, part in
-                    guard !result.contains(part) else { return }
-                    result.append(part)
-                }
-                .joined(separator: " · ")
-
             if isIncome {
-                let type = incomeType(
-                    value: value(mapping.incomeType, row) ?? "",
-                    note: note
-                )
-                let employer = value(mapping.employer, row) ?? ""
+                let employer = value(fields.employer, row) ?? ""
+                let type = incomeType(value: typeText, note: "\(note) \(employer)")
                 incomes.append(
                     IncomeBackup(
                         amount: amount,
@@ -171,10 +238,7 @@ package enum CSVColumnImporter {
                     )
                 }
             } else {
-                let category = expenseCategory(
-                    title: value(mapping.category, row) ?? "",
-                    note: note
-                )
+                let category = expenseCategory(title: categoryText, note: note)
                 expenses.append(
                     ExpenseBackup(
                         amount: amount,

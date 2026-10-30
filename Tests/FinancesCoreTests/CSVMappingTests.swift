@@ -33,12 +33,16 @@ final class CSVMappingTests: XCTestCase {
 
     func testAutomaticMappingAndPreview() throws {
         let mapping = CSVColumnMapping.automatic(headers: headers)
-        XCTAssertEqual(mapping.date, 1)
-        XCTAssertEqual(mapping.amount, 3)
+        XCTAssertTrue(mapping.hasHeader)
+        XCTAssertEqual(mapping.kind, .mixed)
         XCTAssertEqual(mapping.direction, 2)
-        XCTAssertEqual(mapping.category, 4)
-        XCTAssertEqual(mapping.description, 5)
-        XCTAssertEqual(mapping.merchant, 6)
+        XCTAssertEqual(mapping.income.date, 1)
+        XCTAssertEqual(mapping.income.amount, 3)
+        XCTAssertEqual(mapping.income.employer, 5)
+        XCTAssertEqual(mapping.expense.date, 1)
+        XCTAssertEqual(mapping.expense.amount, 3)
+        XCTAssertEqual(mapping.expense.category, 4)
+        XCTAssertEqual(mapping.expense.note, 5)
         XCTAssertEqual(mapping.status, 8)
 
         let table = CSVTable(name: "statement.csv", headers: headers, rows: rows)
@@ -48,6 +52,26 @@ final class CSVMappingTests: XCTestCase {
         XCTAssertEqual(preview.skippedSections, 2)
         XCTAssertEqual(preview.expenses.last?.category, ExpenseCategory.food.rawValue)
         XCTAssertEqual(preview.incomes.first?.type, IncomeType.salary.rawValue)
+    }
+
+    func testNoHeaderUsesColumnNumbersAndFirstRowAsData() throws {
+        let table = CSVTable(
+            name: "no-header.csv",
+            allRows: [
+                ["28.10.2026", "-250,0", "OZON"],
+                ["27.10.2026", "-968,68", "Metro"],
+            ]
+        )
+        var mapping = CSVColumnMapping()
+        mapping.hasHeader = false
+        mapping.kind = .expense
+        mapping.expense = CSVFieldMapping(
+            date: 0, amount: 1, type: nil, employer: nil, category: nil, note: 2
+        )
+
+        let preview = try CSVColumnImporter.preview(table: table, mapping: mapping)
+        XCTAssertEqual(preview.expenses.count, 2)
+        XCTAssertEqual(preview.errors.count, 0)
     }
 
     func testDateWithTimeIsParsed() {
