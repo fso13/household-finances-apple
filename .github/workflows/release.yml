@@ -42,11 +42,24 @@ jobs:
           APP_BUILD: ${{ github.run_number }}
         run: ./Scripts/package_app.sh release
 
+      - name: Install create-dmg
+        run: |
+          if ! command -v create-dmg >/dev/null 2>&1; then
+            brew install create-dmg
+          fi
+
+      - name: Package DMG installer
+        env:
+          APP_VERSION: ${{ github.ref_name }}
+          APP_BUILD: ${{ github.run_number }}
+          SKIP_BUILD: "1"
+        run: ./Scripts/package_dmg.sh
+
       - name: Create release assets
         run: |
           ditto -c -k --norsrc --noextattr --keepParent \
             "dist/Финансы.app" "dist/Finances-${GITHUB_REF_NAME}.zip"
-          ( cd dist && shasum -a 256 "Finances-${GITHUB_REF_NAME}.zip" > checksums.txt )
+          ( cd dist && shasum -a 256 "Finances-${GITHUB_REF_NAME}.zip" "Finances-${GITHUB_REF_NAME}.dmg" > checksums.txt )
           cat "dist/checksums.txt"
 
       - name: Publish GitHub release
@@ -56,6 +69,7 @@ jobs:
         run: |
           gh release create "$TAG" \
             "dist/Finances-${TAG}.zip" \
+            "dist/Finances-${TAG}.dmg" \
             "dist/checksums.txt" \
             --title "Финансы $TAG" \
             --generate-notes

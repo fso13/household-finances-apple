@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/fso13/household-finances-apple/actions/workflows/ci.yml/badge.svg)](https://github.com/fso13/household-finances-apple/actions/workflows/ci.yml)
 
-**Скачать:** [GitHub Releases](https://github.com/fso13/household-finances-apple/releases) · **Сайт:** [fso13.github.io/household-finances-apple](https://fso13.github.io/household-finances-apple/) · **Wiki:** [документация](https://github.com/fso13/household-finances-apple/wiki) · **Issues:** [задачи](https://github.com/fso13/household-finances-apple/issues) · **Roadmap:** [ROADMAP.md](ROADMAP.md)
+**Скачать:** [GitHub Releases](https://github.com/fso13/household-finances-apple/releases) · **Установка:** DMG с перетаскиванием в Applications · **Сайт:** [fso13.github.io/household-finances-apple](https://fso13.github.io/household-finances-apple/) · **Wiki:** [документация](https://github.com/fso13/household-finances-apple/wiki) · **Issues:** [задачи](https://github.com/fso13/household-finances-apple/issues) · **Roadmap:** [ROADMAP.md](ROADMAP.md)
 
 Нативное приложение для учёта выплат и регулярных расходов: зарплата, аванс, отпускные и премии; квартира, гараж и коммуналка с правилами округления; подписки на сервисы. Всё сводится в графики, средние значения и итоги по месяцам, кварталам и годам.
 
@@ -265,6 +265,10 @@ Screenshots/          скриншоты для документации
 - Валюта фиксирована — рубль.
 - Деньги хранятся в целых копейках; старый store мигрируется автоматически.
 
+## Установка
+
+Скачайте `Finances-v2.0.0.dmg`, откройте образ и перетащите **«Финансы»** в **Applications**. DMG оформлен с фоном и стрелкой; подпись ad-hoc, без нотаризации.
+
 ## Планы
 
 Подробный roadmap с релизами, бэклогом фич и реестром технического долга — в [ROADMAP.md](ROADMAP.md).
@@ -272,7 +276,7 @@ Screenshots/          скриншоты для документации
 Ближайшие направления:
 
 - бюджеты и прогноз;
-- 1.5.0 выпущен; в v2.0 начат отчёт по расписанию; iCloud исключён;
+- 2.0.0 выпущен: CSV-маппинг, автосоздание категорий, настройки, отчёты и DMG-инсталлятор; iCloud исключён;
 - статусы регулярных платежей и календарь;
 - сравнение периодов, PDF-отчёты;
 - iCloud-синхронизация (после стабилизации миграций).
