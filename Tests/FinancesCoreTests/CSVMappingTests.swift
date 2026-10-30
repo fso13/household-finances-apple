@@ -1,6 +1,8 @@
+import SwiftData
 import XCTest
 @testable import FinancesCore
 
+@MainActor
 final class CSVMappingTests: XCTestCase {
     private let headers = [
         "Название продукта", "Дата и время операции", "Списание/Зачисление",
@@ -93,6 +95,50 @@ final class CSVMappingTests: XCTestCase {
         let preview = try CSVColumnImporter.preview(table: table, mapping: mapping)
         XCTAssertEqual(preview.expenses.count, 1)
         XCTAssertEqual(preview.skippedSections, 1)
+    }
+
+    func testUnknownCategoryIsCreatedOnImport() throws {
+        CustomCategoryCatalog.shared.replaceAll([])
+        defer { CustomCategoryCatalog.shared.replaceAll([]) }
+
+        let table = CSVTable(
+            name: "unknown.csv",
+            allRows: [["28.10.2026", "-500,0", "Маркетплейсы", "OZON"]]
+        )
+        var mapping = CSVColumnMapping()
+        mapping.hasHeader = false
+        mapping.kind = .expense
+        mapping.expense = CSVFieldMapping(
+            date: 0, amount: 1, type: nil, employer: nil, category: 2, note: 3
+        )
+        let preview = try CSVColumnImporter.preview(table: table, mapping: mapping)
+        XCTAssertEqual(preview.expenses.first?.sourceCategory, "Маркетплейсы")
+
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: IncomeEntry.self,
+            ExpenseEntry.self,
+            RecurringPayment.self,
+            Subscription.self,
+            Budget.self,
+            SavingsGoal.self,
+            PaymentPeriod.self,
+            RecurringDetail.self,
+            RecurringPriceChange.self,
+            configurations: configuration
+        )
+        let context = ModelContext(container)
+        let summary = try CSVImporter.performImport(
+            preview,
+            context: context,
+            automaticBackupFolder: FileManager.default.temporaryDirectory
+                .appendingPathComponent("csv-category-test-\(UUID().uuidString)")
+        )
+
+        XCTAssertEqual(summary.createdCategories, 1)
+        XCTAssertEqual(CustomCategoryCatalog.shared.categories.first?.name, "Маркетплейсы")
+        let expenses = try context.fetch(FetchDescriptor<ExpenseEntry>())
+        XCTAssertEqual(expenses.first?.category.title, "Маркетплейсы")
     }
 
     func testDateWithTimeIsParsed() {

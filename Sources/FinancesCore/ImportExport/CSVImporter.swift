@@ -40,6 +40,13 @@ package struct CSVPreviewRow: Identifiable, Sendable {
 package struct CSVImportSummary: Sendable {
     package var inserted: Int
     package var skipped: Int
+    package var createdCategories: Int
+
+    package init(inserted: Int, skipped: Int, createdCategories: Int = 0) {
+        self.inserted = inserted
+        self.skipped = skipped
+        self.createdCategories = createdCategories
+    }
 }
 
 package enum CSVImporter {
@@ -183,19 +190,48 @@ package enum CSVImporter {
             )
         }
 
+        var createdCategories = 0
         for item in preview.expenses {
+            let categoryRaw = resolveCategory(for: item, created: &createdCategories)
             context.insert(
                 ExpenseEntry(
                     amount: item.amount,
                     date: item.date,
-                    category: ExpenseCategory(rawValue: item.category) ?? .other,
+                    category: ExpenseCategory(rawValue: categoryRaw) ?? .other,
                     note: item.note
                 )
             )
         }
 
         try Persistence.save(context, operation: "csv.import")
-        return CSVImportSummary(inserted: preview.totalRows, skipped: preview.errors.count + preview.skippedSections)
+        return CSVImportSummary(
+            inserted: preview.totalRows,
+            skipped: preview.errors.count + preview.skippedSections,
+            createdCategories: createdCategories
+        )
+    }
+
+    private static func resolveCategory(
+        for item: ExpenseBackup,
+        created: inout Int
+    ) -> String {
+        guard let source = item.sourceCategory?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !source.isEmpty
+        else {
+            return item.category
+        }
+        if let existing = ExpenseCategory(title: source) {
+            return existing.rawValue
+        }
+
+        let custom = CustomExpenseCategory(
+            name: source,
+            icon: "tag.fill",
+            tint: .teal
+        )
+        CustomCategoryCatalog.shared.add(custom)
+        created += 1
+        return "custom:\(custom.id.uuidString)"
     }
 
     // MARK: - Заголовки

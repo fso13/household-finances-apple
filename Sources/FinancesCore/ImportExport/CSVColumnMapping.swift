@@ -254,13 +254,14 @@ package enum CSVColumnImporter {
                     )
                 }
             } else {
-                let category = expenseCategory(title: categoryText, note: note)
+                let (category, sourceCategory) = expenseCategory(title: categoryText, note: note)
                 expenses.append(
                     ExpenseBackup(
                         amount: amount,
                         date: date,
                         category: category.rawValue,
-                        note: note
+                        note: note,
+                        sourceCategory: sourceCategory
                     )
                 )
                 if rows.count < 10 {
@@ -268,7 +269,7 @@ package enum CSVColumnImporter {
                         CSVPreviewRow(
                             date: date,
                             title: "Расход",
-                            kind: "Расход · \(category.title)",
+                            kind: "Расход · \(sourceCategory ?? category.title)",
                             amount: amount,
                             note: note
                         )
@@ -305,35 +306,39 @@ package enum CSVColumnImporter {
         return .other
     }
 
-    private static func expenseCategory(title: String, note: String) -> ExpenseCategory {
+    private static func expenseCategory(
+        title: String,
+        note: String
+    ) -> (ExpenseCategory, String?) {
         if let category = ExpenseCategory(title: title) {
-            return category
+            return (category, nil)
         }
         if let ruled = CategoryRuleEngine.category(for: "\(title) \(note)") {
-            return ruled
+            return (ruled, nil)
         }
 
         let text = "\(title) \(note)".lowercased()
         if text.contains("супермаркет") || text.contains("продукт") || text.contains("магазин") {
-            return .food
+            return (.food, nil)
         }
         if text.contains("кафе") || text.contains("ресторан") || text.contains("фастфуд") {
-            return .food
+            return (.food, nil)
         }
         if text.contains("такси") || text.contains("транспорт") || text.contains("метро") {
-            return .transport
+            return (.transport, nil)
         }
         if text.contains("аптек") || text.contains("здоров") || text.contains("медицин") {
-            return .health
+            return (.health, nil)
         }
         if text.contains("жкх") || text.contains("коммунал") || text.contains("квартплат") {
-            return .utilities
+            return (.utilities, nil)
         }
         if text.contains("связь") || text.contains("интернет") || text.contains("мобильн") {
-            return .internet
+            return (.internet, nil)
         }
-        if text.contains("подписк") { return .subscriptions }
-        return .other
+        if text.contains("подписк") { return (.subscriptions, nil) }
+        let source = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (.other, source.isEmpty ? nil : source)
     }
 }
 

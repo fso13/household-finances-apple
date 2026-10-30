@@ -216,13 +216,19 @@ struct SettingsView: View {
                 CSVImportPreviewSheet(
                     preview: preview,
                     context: context,
-                    onImported: { _ in activeSheet = nil }
+                    onImported: { summary in
+                        activeSheet = nil
+                        resultMessage = importSummaryMessage(summary)
+                    }
                 )
             case .csvMapping(let table):
                 CSVImportMappingSheet(
                     table: table,
                     context: context,
-                    onImported: { _ in activeSheet = nil }
+                    onImported: { summary in
+                        activeSheet = nil
+                        resultMessage = importSummaryMessage(summary)
+                    }
                 )
             case .csvExport:
                 CSVExportSettingsSheet()
@@ -540,6 +546,17 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
         .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func importSummaryMessage(_ summary: CSVImportSummary) -> String {
+        var parts = ["Импортировано записей: \(summary.inserted)"]
+        if summary.skipped > 0 {
+            parts.append("пропущено: \(summary.skipped)")
+        }
+        if summary.createdCategories > 0 {
+            parts.append("создано категорий: \(summary.createdCategories)")
+        }
+        return parts.joined(separator: " · ")
     }
 
     private func settingsRow(

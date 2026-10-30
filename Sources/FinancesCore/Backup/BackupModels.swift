@@ -115,19 +115,29 @@ package struct ExpenseBackup: Codable, Sendable {
     package var date: Date
     package var category: String
     package var note: String
+    /// Исходное название категории из файла, если её ещё нет в приложении.
+    package var sourceCategory: String?
 
     package init(_ entry: ExpenseEntry) {
         amount = entry.amount
         date = entry.date
         category = entry.category.rawValue
         note = entry.note
+        sourceCategory = nil
     }
 
-    package init(amount: Double, date: Date, category: String, note: String) {
+    package init(
+        amount: Double,
+        date: Date,
+        category: String,
+        note: String,
+        sourceCategory: String? = nil
+    ) {
         self.amount = amount
         self.date = date
         self.category = category
         self.note = note
+        self.sourceCategory = sourceCategory
     }
 }
 
