@@ -131,7 +131,7 @@ package enum ApartmentXLSXCodec {
         var rows: [String] = []
         let header = [
             "Месяц", "Аренда", "Капремонт", "Коммуналка", "Свет",
-            "Итого", "Заплатил", "Переплата",
+            "Итого", "Заплатил", "Переплата", "Запас",
         ]
         rows.append(
             "<row r=\"1\">"
@@ -142,7 +142,8 @@ package enum ApartmentXLSXCodec {
                 + "</row>"
         )
 
-        for (offset, month) in months.enumerated() {
+        var running = 0.0
+        for (offset, month) in months.sorted(by: { ($0.year, $0.month) < ($1.year, $1.month) }).enumerated() {
             let row = offset + 2
             let values: [(String, Double)] = [
                 ("B", month.rent),
@@ -161,9 +162,12 @@ package enum ApartmentXLSXCodec {
             cells.append(
                 "<c r=\"F\(row)\"><f>SUM(B\(row):E\(row))</f><v>\(number(total))</v></c>"
             )
+            let monthly = month.paid - total
+            running += monthly
             cells.append(
-                "<c r=\"H\(row)\"><f>G\(row)-F\(row)</f><v>\(number(month.paid - total))</v></c>"
+                "<c r=\"H\(row)\"><f>G\(row)-F\(row)</f><v>\(number(monthly))</v></c>"
             )
+            cells.append("<c r=\"I\(row)\"><v>\(number(running))</v></c>")
             rows.append("<row r=\"\(row)\">\(cells.joined())</row>")
         }
 
@@ -172,7 +176,7 @@ package enum ApartmentXLSXCodec {
             <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
             <cols>
             <col min="1" max="1" width="18" customWidth="1"/>
-            <col min="2" max="8" width="14" customWidth="1"/>
+            <col min="2" max="9" width="14" customWidth="1"/>
             </cols>
             <sheetData>\(rows.joined())</sheetData>
             </worksheet>

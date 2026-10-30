@@ -23,8 +23,12 @@ struct ApartmentView: View {
     private var totalPaid: Double {
         yearMonths.reduce(0) { $0 + $1.paid }
     }
-    private var totalOverpayment: Double {
-        yearMonths.reduce(0) { $0 + $1.overpayment }
+    private var yearBalance: ApartmentYearBalance {
+        ApartmentService.balance(for: year, months: months)
+    }
+
+    private var runningBalances: [Int: Double] {
+        ApartmentService.runningBalances(for: year, months: months)
     }
     private var filledMonths: Int {
         yearMonths.filter {
@@ -40,9 +44,11 @@ struct ApartmentView: View {
                 header
                 summary
                 table
-                Text("Итого считается как аренда + капремонт + коммуналка + свет. Переплата — заплатил минус итого.")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                Text(
+                    "Итого = аренда + капремонт + коммуналка + свет. Переплата — за месяц. Запас учитывает переплаты всех прошлых лет."
+                )
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
             }
             .padding(20)
         }
@@ -129,12 +135,20 @@ struct ApartmentView: View {
                 tint: .green
             )
             StatCard(
-                title: "Переплата",
-                value: Fmt.moneyRounded(totalOverpayment),
-                subtitle: totalOverpayment < 0 ? "недоплата" : "запас",
+                title: "Переплата за год",
+                value: Fmt.moneyRounded(yearBalance.yearOverpayment),
+                subtitle: yearBalance.yearOverpayment < 0 ? "недоплата" : "за этот год",
                 icon: "arrow.left.arrow.right",
-                tint: totalOverpayment < 0 ? .red : .teal,
-                valueColor: totalOverpayment < 0 ? .red : .primary
+                tint: yearBalance.yearOverpayment < 0 ? .red : .teal,
+                valueColor: yearBalance.yearOverpayment < 0 ? .red : .primary
+            )
+            StatCard(
+                title: "Запас на конец",
+                value: Fmt.moneyRounded(yearBalance.closing),
+                subtitle: "с прошлых лет: \(Fmt.moneyRounded(yearBalance.opening))",
+                icon: "banknote.fill",
+                tint: yearBalance.closing < 0 ? .red : .green,
+                valueColor: yearBalance.closing < 0 ? .red : .primary
             )
         }
     }
@@ -144,13 +158,14 @@ struct ApartmentView: View {
             VStack(spacing: 0) {
                 HStack(spacing: 6) {
                     Text("Месяц").frame(width: 92, alignment: .leading)
-                    Text("Аренда").frame(width: 92, alignment: .trailing)
-                    Text("Капремонт").frame(width: 92, alignment: .trailing)
-                    Text("Коммуналка").frame(width: 92, alignment: .trailing)
-                    Text("Свет").frame(width: 82, alignment: .trailing)
-                    Text("Итого").frame(width: 96, alignment: .trailing)
-                    Text("Заплатил").frame(width: 96, alignment: .trailing)
-                    Text("Переплата").frame(width: 96, alignment: .trailing)
+                    Text("Аренда").frame(width: 86, alignment: .trailing)
+                    Text("Капремонт").frame(width: 86, alignment: .trailing)
+                    Text("Коммуналка").frame(width: 86, alignment: .trailing)
+                    Text("Свет").frame(width: 76, alignment: .trailing)
+                    Text("Итого").frame(width: 92, alignment: .trailing)
+                    Text("Заплатил").frame(width: 92, alignment: .trailing)
+                    Text("Переплата").frame(width: 88, alignment: .trailing)
+                    Text("Запас").frame(width: 90, alignment: .trailing)
                 }
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -160,7 +175,10 @@ struct ApartmentView: View {
 
                 ForEach(1...12, id: \.self) { number in
                     if let month = yearMonths.first(where: { $0.month == number }) {
-                        ApartmentRow(month: month)
+                        ApartmentRow(
+                            month: month,
+                            runningBalance: runningBalances[number] ?? 0
+                        )
                     }
                     if number != 12 {
                         Divider().padding(.leading, 6)
@@ -257,6 +275,7 @@ struct ApartmentView: View {
 private struct ApartmentRow: View {
     @Environment(\.modelContext) private var context
     @Bindable var month: ApartmentMonth
+    let runningBalance: Double
 
     var body: some View {
         HStack(spacing: 6) {
@@ -264,21 +283,26 @@ private struct ApartmentRow: View {
                 .font(.caption.weight(.medium))
                 .frame(width: 92, alignment: .leading)
 
-            moneyField($month.rent)
-            moneyField($month.capitalRepair)
-            moneyField($month.utilities)
-            moneyField($month.electricity)
+            moneyField($month.rent, width: 86)
+            moneyField($month.capitalRepair, width: 86)
+            moneyField($month.utilities, width: 86)
+            moneyField($month.electricity, width: 76)
 
             Text(Fmt.money(month.total))
                 .font(.caption.monospacedDigit())
-                .frame(width: 96, alignment: .trailing)
+                .frame(width: 92, alignment: .trailing)
 
-            moneyField($month.paid)
+            moneyField($month.paid, width: 92)
 
             Text(Fmt.signedMoney(month.overpayment))
                 .font(.caption.monospacedDigit().weight(.semibold))
                 .foregroundStyle(month.overpayment < 0 ? Color.red : Color.green)
-                .frame(width: 96, alignment: .trailing)
+                .frame(width: 88, alignment: .trailing)
+
+            Text(Fmt.signedMoney(runningBalance))
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(runningBalance < 0 ? Color.red : Color.teal)
+                .frame(width: 90, alignment: .trailing)
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
@@ -289,7 +313,7 @@ private struct ApartmentRow: View {
         .onChange(of: month.paidKopecks) { _, _ in save() }
     }
 
-    private func moneyField(_ value: Binding<Double>) -> some View {
+    private func moneyField(_ value: Binding<Double>, width: CGFloat = 92) -> some View {
         TextField(
             "",
             value: value,
@@ -298,7 +322,7 @@ private struct ApartmentRow: View {
         .textFieldStyle(.roundedBorder)
         .multilineTextAlignment(.trailing)
         .font(.caption.monospacedDigit())
-        .frame(width: 92)
+        .frame(width: width)
     }
 
     private func save() {
