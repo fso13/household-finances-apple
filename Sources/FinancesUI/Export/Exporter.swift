@@ -8,7 +8,7 @@ import FinancesCore
 
 @MainActor
 enum Exporter {
-    static func exportCSV(context: ModelContext) throws {
+    static func exportCSV(context: ModelContext, settings: CSVExportSettings = .load()) throws {
         let incomes: [IncomeEntry]
         let expenses: [ExpenseEntry]
         let recurring: [RecurringPayment]
@@ -24,11 +24,18 @@ enum Exporter {
             throw AppError.exportFailed
         }
 
+        guard
+            settings.includeIncomes || settings.includeExpenses
+                || settings.includeRecurring || settings.includeSubscriptions
+        else {
+            throw AppError.validation("Выберите хотя бы один раздел для экспорта.")
+        }
+
         var rows: [[String]] = [
             ["Раздел", "Дата", "Тип / категория", "Сумма", "Работодатель", "Примечание"]
         ]
 
-        for income in incomes {
+        for income in incomes where settings.includeIncomes {
             rows.append([
                 "Доход",
                 CSVCodec.machineDate(income.date),
@@ -39,7 +46,7 @@ enum Exporter {
             ])
         }
 
-        for expense in expenses {
+        for expense in expenses where settings.includeExpenses {
             rows.append([
                 "Расход",
                 CSVCodec.machineDate(expense.date),
@@ -50,7 +57,7 @@ enum Exporter {
             ])
         }
 
-        for payment in recurring {
+        for payment in recurring where settings.includeRecurring {
             rows.append([
                 "Обязательный платёж",
                 CSVCodec.machineDate(payment.startDate),
@@ -66,7 +73,7 @@ enum Exporter {
             ])
         }
 
-        for subscription in subscriptions {
+        for subscription in subscriptions where settings.includeSubscriptions {
             rows.append([
                 "Подписка",
                 CSVCodec.machineDate(subscription.startDate),
@@ -82,7 +89,11 @@ enum Exporter {
             ])
         }
 
-        let data = CSVCodec.encode(rows: rows, delimiter: ";", bom: true)
+        let data = CSVCodec.encode(
+            rows: rows,
+            delimiter: settings.delimiter.character,
+            bom: settings.includeBOM
+        )
 
         let panel = NSSavePanel()
         panel.title = "Экспорт финансов в CSV"

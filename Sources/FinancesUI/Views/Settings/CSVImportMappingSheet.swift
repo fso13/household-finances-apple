@@ -21,7 +21,10 @@ struct CSVImportMappingSheet: View {
         self.table = table
         self.context = context
         self.onImported = onImported
-        _mapping = State(initialValue: .automatic(headers: table.headers))
+        let saved =
+            CSVMappingStore.shared.load(for: table, hasHeader: true)
+            ?? CSVMappingStore.shared.load(for: table, hasHeader: false)
+        _mapping = State(initialValue: saved ?? .automatic(headers: table.headers))
     }
 
     var body: some View {
@@ -50,6 +53,11 @@ struct CSVImportMappingSheet: View {
             Form {
                 Section("Файл") {
                     Toggle("Первая строка — шапка", isOn: $mapping.hasHeader)
+                        .onChange(of: mapping.hasHeader) { _, hasHeader in
+                            if let saved = CSVMappingStore.shared.load(for: table, hasHeader: hasHeader) {
+                                mapping = saved
+                            }
+                        }
                     Picker("Что импортировать", selection: $mapping.kind) {
                         ForEach(CSVImportKind.allCases) { kind in
                             Text(kind.title).tag(kind)
@@ -211,6 +219,7 @@ struct CSVImportMappingSheet: View {
                 return
             }
             errorMessage = nil
+            CSVMappingStore.shared.save(mapping, for: table)
             preview = result
         } catch {
             errorMessage = error.localizedDescription

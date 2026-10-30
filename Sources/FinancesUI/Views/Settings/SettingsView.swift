@@ -33,12 +33,14 @@ struct SettingsView: View {
         case backup(BackupEnvelope)
         case csv(CSVImportPreview)
         case csvMapping(CSVTable)
+        case csvExport
 
         var id: String {
             switch self {
             case .backup(let envelope): "backup-\(envelope.createdAt.timeIntervalSince1970)"
             case .csv(let preview): "csv-\(preview.id.uuidString)"
             case .csvMapping(let table): "csvmapping-\(table.id.uuidString)"
+            case .csvExport: "csv-export"
             }
         }
     }
@@ -222,6 +224,8 @@ struct SettingsView: View {
                     context: context,
                     onImported: { _ in activeSheet = nil }
                 )
+            case .csvExport:
+                CSVExportSettingsSheet()
             }
         }
         .sheet(
@@ -438,14 +442,10 @@ struct SettingsView: View {
                     icon: "tablecells",
                     tint: .teal,
                     title: "Экспортировать в CSV",
-                    subtitle: "все операции, регулярные платежи и подписки",
+                    subtitle: "разделы, разделитель и BOM запоминаются",
                     actionTitle: "Экспорт"
                 ) {
-                    do {
-                        try Exporter.exportCSV(context: context)
-                    } catch {
-                        ErrorCenter.shared.report(error)
-                    }
+                    activeSheet = .csvExport
                 }
 
                 Divider()

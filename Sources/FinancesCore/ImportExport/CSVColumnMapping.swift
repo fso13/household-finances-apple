@@ -27,6 +27,14 @@ package struct CSVTable: Identifiable, Sendable {
         hasHeader ? allRows.dropFirst() : allRows[...]
     }
 
+    package var mappingKey: String {
+        "h:" + headers.joined(separator: "|").lowercased()
+    }
+
+    package var noHeaderMappingKey: String {
+        "n:\(columnCount)"
+    }
+
     package static func load(data: Data, name: String) throws -> CSVTable {
         let rows = try CSVCodec.parse(data)
         guard !rows.isEmpty else { throw AppError.importFailed }
@@ -36,7 +44,7 @@ package struct CSVTable: Identifiable, Sendable {
 
 // MARK: - Маппинг полей приложения
 
-package enum CSVImportKind: String, CaseIterable, Identifiable, Sendable {
+package enum CSVImportKind: String, CaseIterable, Identifiable, Codable, Sendable {
     case income
     case expense
     case mixed
@@ -52,7 +60,7 @@ package enum CSVImportKind: String, CaseIterable, Identifiable, Sendable {
 }
 
 /// Поля приложения. Для дохода используются 5, для расхода — 4.
-package struct CSVFieldMapping: Equatable, Sendable {
+package struct CSVFieldMapping: Equatable, Codable, Sendable {
     package var date: Int?
     package var amount: Int?
     package var type: Int?
@@ -61,7 +69,7 @@ package struct CSVFieldMapping: Equatable, Sendable {
     package var note: Int?
 }
 
-package struct CSVColumnMapping: Equatable, Sendable {
+package struct CSVColumnMapping: Equatable, Codable, Sendable {
     package var hasHeader: Bool = true
     package var kind: CSVImportKind = .mixed
     package var income = CSVFieldMapping()
@@ -326,5 +334,38 @@ package enum CSVColumnImporter {
         }
         if text.contains("подписк") { return .subscriptions }
         return .other
+    }
+}
+
+// MARK: - Сохранение последних настроек импорта
+
+package final class CSVMappingStore {
+    package static let shared = CSVMappingStore()
+
+    private let key = "csvMappingPresets"
+    private var cache: [String: CSVColumnMapping] = [:]
+
+    private init() {
+        if let data = UserDefaults.standard.data(forKey: key),
+            let decoded = try? JSONDecoder().decode([String: CSVColumnMapping].self, from: data)
+        {
+            cache = decoded
+        }
+    }
+
+    package func load(for table: CSVTable, hasHeader: Bool) -> CSVColumnMapping? {
+        var mapping = cache[hasHeader ? table.mappingKey : table.noHeaderMappingKey]
+        if mapping != nil {
+            mapping?.hasHeader = hasHeader
+        }
+        return mapping
+    }
+
+    package func save(_ mapping: CSVColumnMapping, for table: CSVTable) {
+        let key = mapping.hasHeader ? table.mappingKey : table.noHeaderMappingKey
+        cache[key] = mapping
+        if let data = try? JSONEncoder().encode(cache) {
+            UserDefaults.standard.set(data, forKey: self.key)
+        }
     }
 }
