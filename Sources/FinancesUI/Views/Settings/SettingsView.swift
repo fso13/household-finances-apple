@@ -32,11 +32,13 @@ struct SettingsView: View {
     private enum SettingsSheet: Identifiable {
         case backup(BackupEnvelope)
         case csv(CSVImportPreview)
+        case csvMapping(CSVTable)
 
         var id: String {
             switch self {
             case .backup(let envelope): "backup-\(envelope.createdAt.timeIntervalSince1970)"
             case .csv(let preview): "csv-\(preview.id.uuidString)"
+            case .csvMapping(let table): "csvmapping-\(table.id.uuidString)"
             }
         }
     }
@@ -198,6 +200,28 @@ struct SettingsView: View {
                 Button("Управлять") { showCategoryRules = true }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+            }
+        }
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .backup(let envelope):
+                BackupPreviewSheet(
+                    envelope: envelope,
+                    context: context,
+                    onImported: { _ in activeSheet = nil }
+                )
+            case .csv(let preview):
+                CSVImportPreviewSheet(
+                    preview: preview,
+                    context: context,
+                    onImported: { _ in activeSheet = nil }
+                )
+            case .csvMapping(let table):
+                CSVImportMappingSheet(
+                    table: table,
+                    context: context,
+                    onImported: { _ in activeSheet = nil }
+                )
             }
         }
         .sheet(
@@ -434,8 +458,11 @@ struct SettingsView: View {
                     actionTitle: "Импорт"
                 ) {
                     do {
-                        if let preview = try Exporter.chooseCSV() {
-                            activeSheet = .csv(preview)
+                        if let result = try Exporter.chooseCSV() {
+                            switch result {
+                            case .ofx(let preview): activeSheet = .csv(preview)
+                            case .csv(let table): activeSheet = .csvMapping(table)
+                            }
                         }
                     } catch {
                         ErrorCenter.shared.report(error)

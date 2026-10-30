@@ -18,7 +18,7 @@ struct CSVImportPreviewSheet: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Импорт CSV")
                         .font(.title3.weight(.semibold))
-                    Text("Колонки распознаны автоматически")
+                    Text("Проверьте данные перед импортом")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

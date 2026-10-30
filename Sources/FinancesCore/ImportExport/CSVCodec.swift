@@ -93,7 +93,11 @@ package enum CSVCodec {
 
     package static func parseDate(_ value: String) -> Date? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        let formats = ["yyyy-MM-dd", "dd.MM.yyyy", "dd/MM/yyyy", "yyyy-MM-dd'T'HH:mm:ssXXXXX"]
+        let formats = [
+            "yyyy-MM-dd", "dd.MM.yyyy", "dd/MM/yyyy",
+            "dd.MM.yyyy HH:mm", "dd.MM.yyyy HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ssXXXXX",
+        ]
 
         for format in formats {
             let formatter = DateFormatter()

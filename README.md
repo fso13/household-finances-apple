@@ -118,7 +118,7 @@
 - Импорт CSV с автоматическим распознаванием колонок и предпросмотром.
 - Полная очистка данных с подтверждением.
 - Светлая и тёмная темы, русская локализация, суммы в рублях.
-- 107 тестов и CI на GitHub Actions.
+- 109 тестов и CI на GitHub Actions.
 
 ## Скриншоты
 
@@ -238,7 +238,7 @@ Sources/
     Views/            экраны, бюджеты, цели, категории, общие компоненты
   FinancesApp/        тонкий composition root
 Tests/
-  FinancesCoreTests/  107 тестов
+  FinancesCoreTests/  109 тестов
 Scripts/
   package_app.sh      сборка .app
   lint.sh             swift-format

@@ -100,7 +100,12 @@ enum Exporter {
         }
     }
 
-    static func chooseCSV() throws -> CSVImportPreview? {
+    enum StatementImport {
+        case ofx(CSVImportPreview)
+        case csv(CSVTable)
+    }
+
+    static func chooseCSV() throws -> StatementImport? {
         let panel = NSOpenPanel()
         panel.title = "Импорт операций из CSV или OFX"
         let ofxType = UTType(filenameExtension: "ofx") ?? .data
@@ -115,9 +120,9 @@ enum Exporter {
         do {
             let data = try Data(contentsOf: url)
             if url.pathExtension.lowercased() == "ofx" || looksLikeOFX(data) {
-                return try OFXImporter.preview(data: data)
+                return .ofx(try OFXImporter.preview(data: data))
             }
-            return try CSVImporter.preview(data: data)
+            return .csv(try CSVTable.load(data: data, name: url.lastPathComponent))
         } catch let error as AppError {
             throw error
         } catch {
