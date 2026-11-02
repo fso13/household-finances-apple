@@ -1,3 +1,4 @@
+import AppKit
 import SwiftData
 import SwiftUI
 import FinancesCore
@@ -19,6 +20,7 @@ package struct RootView: View {
             SidebarView(route: $appState.route)
         } detail: {
             detailView
+                .background(Color(nsColor: .windowBackgroundColor))
         }
         .navigationSplitViewStyle(.balanced)
         .sheet(isPresented: $showWelcome, onDismiss: { hasOnboarded = true }) {
