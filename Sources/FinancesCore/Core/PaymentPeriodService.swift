@@ -69,6 +69,7 @@ package enum PaymentPeriodService {
         periods: [PaymentPeriod],
         date: Date = Date()
     ) throws -> PaymentPeriod {
+        let effectiveDate = date.isSameMonth(as: month) ? date : month.startOfMonth
         let existing = period(for: payment, month: month, periods: periods)
         let expenses = try context.fetch(FetchDescriptor<ExpenseEntry>())
         let partial = partialExpense(for: payment, month: month, expenses: expenses)
@@ -76,12 +77,12 @@ package enum PaymentPeriodService {
         if let partial {
             partial.amount = payment.payableAmount
             partial.note = payment.title
-            partial.date = date.startOfDay
+            partial.date = effectiveDate.startOfDay
         } else if !PaymentRecorder.isRecorded(payment, expenses: expenses, in: month) {
             context.insert(
                 ExpenseEntry(
                     amount: payment.payableAmount,
-                    date: date,
+                    date: effectiveDate,
                     category: payment.category,
                     note: payment.title
                 )
@@ -95,7 +96,7 @@ package enum PaymentPeriodService {
                 periodStart: month,
                 status: .paid,
                 paidAmount: payment.payableAmount,
-                paidDate: date
+                paidDate: effectiveDate
             )
         if existing == nil {
             context.insert(period)
@@ -103,7 +104,7 @@ package enum PaymentPeriodService {
         period.status = .paid
         period.plannedAmount = payment.payableAmount
         period.paidAmount = payment.payableAmount
-        period.paidDate = date.startOfDay
+        period.paidDate = effectiveDate.startOfDay
         period.title = payment.title
 
         try Persistence.save(context, operation: "payment.period.paid")
@@ -124,6 +125,7 @@ package enum PaymentPeriodService {
             throw AppError.validation("Сумма частичной оплаты должна быть больше нуля.")
         }
 
+        let effectiveDate = date.isSameMonth(as: month) ? date : month.startOfMonth
         let existing = period(for: payment, month: month, periods: periods)
         if let existing, existing.status == .paid {
             throw AppError.validation("Платёж уже оплачен полностью.")
@@ -148,7 +150,7 @@ package enum PaymentPeriodService {
                 periodStart: month,
                 status: .partial,
                 paidAmount: total,
-                paidDate: date
+                paidDate: effectiveDate
             )
         if existing == nil {
             context.insert(period)
@@ -156,7 +158,7 @@ package enum PaymentPeriodService {
         period.status = .partial
         period.plannedAmount = payment.payableAmount
         period.paidAmount = total
-        period.paidDate = date.startOfDay
+        period.paidDate = effectiveDate.startOfDay
         period.title = payment.title
 
         let expenses = try context.fetch(FetchDescriptor<ExpenseEntry>())
@@ -167,12 +169,12 @@ package enum PaymentPeriodService {
                 && $0.note == note
         }) {
             expense.amount = total
-            expense.date = date.startOfDay
+            expense.date = effectiveDate.startOfDay
         } else {
             context.insert(
                 ExpenseEntry(
                     amount: total,
-                    date: date,
+                    date: effectiveDate,
                     category: payment.category,
                     note: note
                 )
