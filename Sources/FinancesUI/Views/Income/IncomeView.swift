@@ -14,6 +14,9 @@ struct IncomeView: View {
     @State private var editor: EditorContext?
     @State private var confirmDelete = false
     @State private var pendingDelete = Set<PersistentIdentifier>()
+    @State private var sortOrder: [KeyPathComparator<IncomeEntry>] = [
+        KeyPathComparator(\IncomeEntry.date, order: .reverse)
+    ]
 
     private struct EditorContext: Identifiable {
         let id = UUID()
@@ -118,32 +121,32 @@ struct IncomeView: View {
     }
 
     private var table: some View {
-        Table(filtered, selection: $selection) {
-            TableColumn("Дата") { entry in
+        Table(filtered, selection: $selection, sortOrder: $sortOrder) {
+            TableColumn("Дата", value: \.date) { entry in
                 Text(MonthFormat.day(entry.date))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
             .width(min: 100, ideal: 115)
 
-            TableColumn("Тип") { entry in
+            TableColumn("Тип", value: \.typeRaw) { entry in
                 TagBadge(text: entry.type.title, color: entry.type.color, icon: entry.type.icon)
             }
             .width(min: 120, ideal: 145)
 
-            TableColumn("Сумма") { entry in
+            TableColumn("Сумма", value: \.amountKopecks) { entry in
                 Text(Fmt.money(entry.amount))
                     .font(.callout.weight(.semibold))
                     .monospacedDigit()
             }
             .width(min: 110, ideal: 130)
 
-            TableColumn("Работодатель") { entry in
+            TableColumn("Работодатель", value: \.employer) { entry in
                 Text(entry.employer)
                     .lineLimit(1)
             }
 
-            TableColumn("Комментарий") { entry in
+            TableColumn("Комментарий", value: \.note) { entry in
                 Text(entry.note)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

@@ -12,8 +12,6 @@ struct ApartmentView: View {
     @State private var year: Int = Date().year
     @State private var resultMessage: String?
     @State private var isWorking = false
-    @State private var sortColumn: ApartmentSortColumn = .month
-    @State private var sortAscending = true
 
     private var yearMonths: [ApartmentMonth] {
         months.filter { $0.year == year }.sorted { $0.month < $1.month }
@@ -32,47 +30,6 @@ struct ApartmentView: View {
     private var runningBalances: [Int: Double] {
         ApartmentService.runningBalances(for: year, months: months)
     }
-    private var sortedMonths: [ApartmentMonth] {
-        yearMonths.sorted { lhs, rhs in
-            let comparison: ComparisonResult
-            switch sortColumn {
-            case .month:
-                comparison = compare(lhs.month, rhs.month)
-            case .rent:
-                comparison = compare(lhs.rent, rhs.rent)
-            case .capitalRepair:
-                comparison = compare(lhs.capitalRepair, rhs.capitalRepair)
-            case .utilities:
-                comparison = compare(lhs.utilities, rhs.utilities)
-            case .electricity:
-                comparison = compare(lhs.electricity, rhs.electricity)
-            case .total:
-                comparison = compare(lhs.total, rhs.total)
-            case .paid:
-                comparison = compare(lhs.paid, rhs.paid)
-            case .overpayment:
-                comparison = compare(lhs.overpayment, rhs.overpayment)
-            case .stock:
-                comparison = compare(
-                    runningBalances[lhs.month] ?? 0,
-                    runningBalances[rhs.month] ?? 0
-                )
-            }
-            if comparison == .orderedSame {
-                return lhs.month < rhs.month
-            }
-            return sortAscending
-                ? comparison == .orderedAscending
-                : comparison == .orderedDescending
-        }
-    }
-
-    private func compare<T: Comparable>(_ lhs: T, _ rhs: T) -> ComparisonResult {
-        if lhs < rhs { return .orderedAscending }
-        if lhs > rhs { return .orderedDescending }
-        return .orderedSame
-    }
-
     private var filledMonths: Int {
         yearMonths.filter {
             $0.rentKopecks != 0 || $0.capitalRepairKopecks != 0
@@ -201,15 +158,15 @@ struct ApartmentView: View {
         CardView(padding: 12) {
             VStack(spacing: 0) {
                 HStack(spacing: 6) {
-                    sortHeader("Месяц", .month, width: 92, alignment: .leading)
-                    sortHeader("Аренда", .rent, width: 86)
-                    sortHeader("Капремонт", .capitalRepair, width: 86)
-                    sortHeader("Коммуналка", .utilities, width: 86)
-                    sortHeader("Свет", .electricity, width: 76)
-                    sortHeader("Итого", .total, width: 92)
-                    sortHeader("Заплатил", .paid, width: 92)
-                    sortHeader("Переплата", .overpayment, width: 88)
-                    sortHeader("Запас", .stock, width: 90)
+                    Text("Месяц").frame(width: 92, alignment: .leading)
+                    Text("Аренда").frame(width: 86, alignment: .trailing)
+                    Text("Капремонт").frame(width: 86, alignment: .trailing)
+                    Text("Коммуналка").frame(width: 86, alignment: .trailing)
+                    Text("Свет").frame(width: 76, alignment: .trailing)
+                    Text("Итого").frame(width: 92, alignment: .trailing)
+                    Text("Заплатил").frame(width: 92, alignment: .trailing)
+                    Text("Переплата").frame(width: 88, alignment: .trailing)
+                    Text("Запас").frame(width: 90, alignment: .trailing)
                 }
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -217,44 +174,19 @@ struct ApartmentView: View {
                 .padding(.vertical, 8)
                 Divider()
 
-                ForEach(sortedMonths) { month in
-                    ApartmentRow(
-                        month: month,
-                        runningBalance: runningBalances[month.month] ?? 0
-                    )
-                    if month.id != sortedMonths.last?.id {
+                ForEach(1...12, id: \.self) { number in
+                    if let month = yearMonths.first(where: { $0.month == number }) {
+                        ApartmentRow(
+                            month: month,
+                            runningBalance: runningBalances[number] ?? 0
+                        )
+                    }
+                    if number != 12 {
                         Divider().padding(.leading, 6)
                     }
                 }
             }
         }
-    }
-
-    private func sortHeader(
-        _ title: String,
-        _ column: ApartmentSortColumn,
-        width: CGFloat,
-        alignment: Alignment = .trailing
-    ) -> some View {
-        Button {
-            if sortColumn == column {
-                sortAscending.toggle()
-            } else {
-                sortColumn = column
-                sortAscending = true
-            }
-        } label: {
-            HStack(spacing: 2) {
-                Text(title)
-                if sortColumn == column {
-                    Image(systemName: sortAscending ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 7, weight: .bold))
-                }
-            }
-            .frame(width: width, alignment: alignment)
-        }
-        .buttonStyle(.plain)
-        .help("Сортировать по колонке «\(title)»")
     }
 
     private func ensureMonths() {
@@ -339,18 +271,6 @@ struct ApartmentView: View {
             ErrorCenter.shared.report(error)
         }
     }
-}
-
-private enum ApartmentSortColumn {
-    case month
-    case rent
-    case capitalRepair
-    case utilities
-    case electricity
-    case total
-    case paid
-    case overpayment
-    case stock
 }
 
 private struct ApartmentRow: View {

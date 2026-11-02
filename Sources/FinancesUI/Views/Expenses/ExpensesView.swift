@@ -14,6 +14,9 @@ struct ExpensesView: View {
     @State private var editor: EditorContext?
     @State private var confirmDelete = false
     @State private var pendingDelete = Set<PersistentIdentifier>()
+    @State private var sortOrder: [KeyPathComparator<ExpenseEntry>] = [
+        KeyPathComparator(\ExpenseEntry.date, order: .reverse)
+    ]
 
     private struct EditorContext: Identifiable {
         let id = UUID()
@@ -115,27 +118,27 @@ struct ExpensesView: View {
     }
 
     private var table: some View {
-        Table(filtered, selection: $selection) {
-            TableColumn("Дата") { entry in
+        Table(filtered, selection: $selection, sortOrder: $sortOrder) {
+            TableColumn("Дата", value: \.date) { entry in
                 Text(MonthFormat.day(entry.date))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
             .width(min: 100, ideal: 115)
 
-            TableColumn("Категория") { entry in
+            TableColumn("Категория", value: \.categoryRaw) { entry in
                 TagBadge(text: entry.category.title, color: entry.category.color, icon: entry.category.icon)
             }
             .width(min: 130, ideal: 170)
 
-            TableColumn("Сумма") { entry in
+            TableColumn("Сумма", value: \.amountKopecks) { entry in
                 Text(Fmt.money(entry.amount))
                     .font(.callout.weight(.semibold))
                     .monospacedDigit()
             }
             .width(min: 110, ideal: 135)
 
-            TableColumn("Комментарий") { entry in
+            TableColumn("Комментарий", value: \.note) { entry in
                 Text(entry.note)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
