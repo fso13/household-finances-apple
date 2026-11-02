@@ -120,8 +120,12 @@ struct IncomeView: View {
         .padding(16)
     }
 
+    private var displayed: [IncomeEntry] {
+        filtered.sorted(using: sortOrder)
+    }
+
     private var table: some View {
-        Table(filtered, selection: $selection, sortOrder: $sortOrder) {
+        Table(displayed, selection: $selection, sortOrder: $sortOrder) {
             TableColumn("Дата", value: \.date) { entry in
                 Text(MonthFormat.day(entry.date))
                     .font(.callout)
